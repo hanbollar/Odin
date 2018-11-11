@@ -16,6 +16,7 @@ WebGL Crowd-Sim with GPU.js
 	- Mac OS X El Capitan 10.11.6, 2.5 GHz Intel Core i7, AMD Radeon R9 M370X 2048 MB (personal)
 - Browsers:
 	- Google Chrome Version 70.0.3538.77 (Official Build) (64-bit)
+	- Firefox Version 63.0.1 (Official Build) (64-bit)
 
 ____________________________________________________________________________________
 
@@ -23,3 +24,16 @@ ________________________________________________________________________________
 
 
 [//]: # ( ![Issues](https://img.shields.io/badge/issues-none-green.svg)
+
+## The Project
+
+In Progress - More information coming soon.
+
+## Build Instructions
+
+'TBD'
+
+## References
+
+- [Project 5 GPU CIS 565 project](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus) - for node.js project setup
+- [gpu.js](http://gpu.rocks/) - for gpu.js syntax and include file
