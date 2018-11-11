@@ -5,8 +5,7 @@ Hannah Bollar, Eric Chiu
 
 #### Notes
 - Procedural character
-	- no meshing
-	- marionette
+	- marionette / signed distance functions for meshing
 	- walk animation (gpu per char for update)
 	- reach for char --> non primitive base
 - tbd - procedural terrain / city?

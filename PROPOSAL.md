@@ -4,7 +4,7 @@ Hannah Bollar, Eric Chiu
 ## Crowd Simulation using WebGL 2.0 with gpu.js
 
 #### Implementation Features
-- [ ] Procedural Marionette Mesh creation
+- [ ] Procedural Marionette Mesh creation / signed distance functions for meshing
 - [ ] Inverse Kinematic Animation on GPU
 - [ ] Scene Graph Updates on GPU
 - [ ] Optimized Crowd Simulations on GPU
@@ -24,7 +24,7 @@ Pitch - Nov 12
 - Include all appropriate files and project base ready for working
 
 Milestone 1 - Nov 19
-- Procedural marionette loading and working
+- Procedural marionette loading and working, beginning signed distance functions for meshing
 - Basic setup of gpu based bio crowds (for initial gpu setup and for initial basic crowds setup)
 
 Milestone 2 - Nov 26
