@@ -29,9 +29,28 @@ ________________________________________________________________________________
 
 In Progress - More information coming soon.
 
-## Build Instructions
+## Build and Run Instructions
 
-'TBD'
+#### Build
+```
+Clone this repository
+Download and install Node.js
+Run npm install in the root directory which will download and install dependencies.
+Run npm start and navigate to http://localhost:5650
+```
+
+#### Run
+Need WebGL-capable browser to run this project (Chrome seems to work best).
+Some notable extensions that might be needed (check for support on WebGL Report) :
+```
+OES_texture_float
+OES_texture_float_linear
+OES_element_index_uint
+EXT_frag_depth
+WEBGL_depth_texture
+WEBGL_draw_buffer
+```
+If there are still issues, make sure you've updated your browser and video drivers.
 
 ## References
 
