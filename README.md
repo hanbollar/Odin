@@ -1,6 +1,6 @@
 Odin
 ===============
-**WebGL Crowd-Sim with GPU.js**
+*WebGL Crowd-Sim with GPU.js*
 
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
