@@ -1,4 +1,3 @@
-// TODO: Change this to enable / disable debug mode
 export const DEBUG = false && process.env.NODE_ENV === 'development';
 
 import DAT from 'dat.gui';
@@ -24,30 +23,6 @@ const glContext = canvas.getContext('webgl');
 export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName, args) => {
   abort(WebGLDebug.glEnumToString(err) + ' was caused by call to: ' + funcName);
 }) : glContext;
-
-const supportedExtensions = gl.getSupportedExtensions();
-const requiredExtensions = [
-  'OES_texture_float',
-  'OES_texture_float_linear',
-  'OES_element_index_uint',
-  'WEBGL_depth_texture',
-  'WEBGL_draw_buffers',
-];
-
-// Check that all required extensions are supported
-for (let i = 0; i < requiredExtensions.length; ++i) {
-  if (supportedExtensions.indexOf(requiredExtensions[i]) < 0) {
-    throw 'Unable to load extension ' + requiredExtensions[i];
-  }
-}
-
-// Get the maximum number of draw buffers
-gl.getExtension('OES_texture_float');
-gl.getExtension('OES_texture_float_linear');
-gl.getExtension('OES_element_index_uint');
-gl.getExtension('WEBGL_depth_texture');
-export const WEBGL_draw_buffers = gl.getExtension('WEBGL_draw_buffers');
-export const MAX_DRAW_BUFFERS_WEBGL = gl.getParameter(WEBGL_draw_buffers.MAX_DRAW_BUFFERS_WEBGL);
 
 export const gui = new DAT.GUI();
 
