@@ -41,7 +41,7 @@ Run npm start and navigate to http://localhost:5650
 
 #### Run
 Need WebGL-capable browser to run this project (Chrome seems to work best).
-Some notable extensions that might be needed (check for support on WebGL Report) :
+Some notable extensions that might be needed (check for support on [WebGL Report](http://webglreport.com/?v=2)) :
 ```
 OES_texture_float
 OES_texture_float_linear

@@ -5,7 +5,7 @@ Hannah Bollar, Eric Chiu
 
 ### Notes
 
-[1](./images/1.jpg)
+![1](./images/1.jpg)
 #### Notes Session 1 Summary
 - Procedural character
 	- marionette / signed distance functions for meshing
@@ -21,5 +21,5 @@ Hannah Bollar, Eric Chiu
 	- this (to make sure have basics down), then papers for more advanced techniques
 - cycle of walking - limbs / scene graph / etc.
 
-[2](./images/2.jpg)
+![2](./images/2.jpg)
 #### Notes Session 2 Summary
