@@ -17,7 +17,13 @@ export function abort(message) {
 export const canvas = document.getElementById('canvas');
 
 // Initialize the WebGL context
-const glContext = canvas.getContext('webgl');
+const glContext = canvas.getContext('webgl2');
+glContext.webgl2 = (typeof WebGL2RenderingContext !== "undefined" && glContext instanceof WebGL2RenderingContext);
+if (!glContext.webgl2) {
+  console.log('WebGL 2 is not available. Make sure it is available and properly enabled in this browser');
+} else {
+  console.log('WebGL 2 activated.');
+}
 
 // Get a debug context
 export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName, args) => {

@@ -1,4 +1,5 @@
-// import { makeRenderLoop, camera, cameraControls, gui, gl } from './init';
+ import { camera, cameraControls, gui, gl } from './init';
+ import { mat4, vec4 } from 'gl-matrix';
 // import Scene from './scene';
 
 // // setup gui
@@ -26,20 +27,9 @@
 ******************************************************************************************************************/
 // "use strict";
 
-import { mat4, vec4 } from 'gl-matrix';
 
-export const canvas = document.getElementById('canvas');
- canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-const gl_context = canvas.getContext('webgl2');
-//console.log('gl_context: '+ gl_context);
 
-var isWebGL2 = !!gl_context;
-if(!isWebGL2) {
-  console.log('WebGL 2 is not available. Make sure it is available and properly enabled in this browser');
-} else {
-  console.log('WebGL 2 confirmed');
-}
+
 
 // var vertexShaderSource = `#version 300 es
 
@@ -130,7 +120,7 @@ const vertex_count = 4;
 // constants for visual
 const fov_in_degrees = 45;
 const fov_in_radians = fov_in_degrees * Math.PI / 180;   // in radians
-const aspect_ratio = gl_context.canvas.clientWidth / gl_context.canvas.clientHeight;
+const aspect_ratio = gl.canvas.clientWidth / gl.canvas.clientHeight;
 const near_clip = 0.1;
 const far_clip = 100.0;
 
@@ -169,7 +159,7 @@ function main() {
 
   // Initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
-  const shaderProgram = initShaderProgram(gl_context, vsSource, fsSource);
+  const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
 
   // Collect all the info needed to use the shader program.
   // Look up which attribute our shader program is using
@@ -177,20 +167,20 @@ function main() {
   const programInfo = {
     program: shaderProgram,
     attribLocations: {
-      vertexPosition: gl_context.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
     },
     uniformLocations: {
-      projectionMatrix: gl_context.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-      modelViewMatrix: gl_context.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+      projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
     },
   };
 
   // Here's where we call the routine that builds all the
   // objects we'll be drawing.
-  const buffers = initBuffers(gl_context);
+  const buffers = initBuffers(gl);
 
   // Draw the scene
-  drawScene(gl_context, programInfo, buffers);
+  drawScene(gl, programInfo, buffers);
 }
 
 main();
