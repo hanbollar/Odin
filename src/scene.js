@@ -1,53 +1,131 @@
-import { gl } from './init';
-import { mat4, vec4 } from 'gl-matrix';
-import { loadShaderProgram } from './utils';
-//import vsSource from '../shaders/quad.vert.glsl';
-import vsSource from './shaders/quad.vert.glsl';
-import fsSource from './shaders/quad.frag.glsl';
+import { camera, cameraControls, gui, gl } from './init';
+import { mat4, vec4, vec2 } from 'gl-matrix';
+import { initShaderProgram } from './utils';
 
 class Scene {
   constructor() {
-    this.screen = [];
-
-    // Initialize a shader program. The fragment shader source is compiled based on the number of lights
-    this._shaderProgram = loadShaderProgram(vsSource, fsSource({
-      uniforms: ['u_viewProjectionMatrix'],
-      attribs: ['a_position', 'a_normal', 'a_uv']
-    }) );
+    this.HALF_SCREEN_WIDTH = canvas.width / 2.0;
+    this.HALF_SCREEN_HEIGHT = canvas.height / 2.0;
+    this.SCREEN_QUAD_POSITIONS = [
+       1.0,  1.0,
+      -1.0,  1.0,
+       1.0, -1.0,
+      -1.0, -1.0,
+    ];
+    this.VERTEX_COUNT = 4;
 
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
     this._viewProjectionMatrix = mat4.create();
+
+    // Initialize a shader program; this is where all the lighting
+    // for the vertices and so forth is established.
+    const vs = `#version 300 es
+      precision highp float;
+      precision highp int;
+
+      in vec4 aVertexPosition;
+      uniform mat4 uModelViewMatrix;
+      uniform mat4 uProjectionMatrix;
+      uniform vec2 uScreenDimensions;
+
+      out vec4 position;
+
+      void main() {
+        vec2 adjust = vec2(0.5, 0.5);
+        vec2 xy_loc = vec2(aVertexPosition) * adjust + adjust;
+        gl_Position = vec4(xy_loc.x, xy_loc.y, aVertexPosition.z, aVertexPosition.w);
+        position = gl_Position;
+      }`;
+    const fs = `#version 300 es
+      precision highp float;
+      precision highp int;
+
+      in vec4 position;
+      
+
+      out vec4 outColor;
+      void main() {
+       outColor = position;// vec4(gl_FragCoord.x / uScreenDimensions.x, gl_FragCoord.y / uScreenDimensions.y, 0, 1);
+      }`;
+    this.shaderProgram = initShaderProgram(gl, vs, fs);
+
+    // Collect all the info needed to use the shader program.
+    // Look up which attribute our shader program is using
+    // for aVertexPosition and look up uniform locations.
+    this.programInfo = {
+      program: this.shaderProgram,
+      attribLocations: {
+        vertexPosition: gl.getAttribLocation(this.shaderProgram, 'aVertexPosition'),
+      },
+      uniformLocations: {
+        projectionMatrix: gl.getUniformLocation(this.shaderProgram, 'uProjectionMatrix'),
+        modelViewMatrix: gl.getUniformLocation(this.shaderProgram, 'uModelViewMatrix'),
+        screenDimensions: gl.getUniformLocation(this.shaderProgram, 'uScreenDimensions'),
+      },
+    };
+
+    // Here's where we call the routine that builds all the
+    // objects we'll be drawing.
+    this.buffers = this.initBuffers(gl);
+
+    this.time = 0;
   }
 
   update() {
     // TODO: implement so calls tick for crowd sim movement
+    this.time += 1;
+    this.drawScene(gl, this.programInfo, this.buffers);
+    console.log('time:'+ this.time);
   }
 
-  render(camera, scene) {
-    // Update the camera matrices
-    camera.updateMatrixWorld();
-    mat4.invert(this._viewMatrix, camera.matrixWorld.elements);
-    mat4.copy(this._projectionMatrix, camera.projectionMatrix.elements);
-    mat4.multiply(this._viewProjectionMatrix, this._projectionMatrix, this._viewMatrix);
+  // making screenspace render square for the shaders
+  initBuffers(gl_context) {
+    const positionBuffer = gl_context.createBuffer();
+    gl_context.bindBuffer(gl_context.ARRAY_BUFFER, positionBuffer);
+    gl_context.bufferData(gl_context.ARRAY_BUFFER, new Float32Array(this.SCREEN_QUAD_POSITIONS), gl_context.STATIC_DRAW);
 
-    // Bind the default null framebuffer which is the screen
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-    // Render to the whole screen
-    gl.viewport(0, 0, canvas.width, canvas.height);
-
-    // Clear the frame
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
-    // Use this shader program
-    gl.useProgram(this._shaderProgram.glShaderProgram);
-
-    // Upload the camera matrix
-    gl.uniformMatrix4fv(this._shaderProgram.u_viewProjectionMatrix, false, this._viewProjectionMatrix);
-
-    renderFullscreenQuad(this._shaderProgram.glShaderProgram);
+    return {
+      position: positionBuffer,
+    };
   }
+
+  drawScene(gl_context, programInfo, buffers) {
+   
+    // clear all values before redrawing
+    gl_context.clearColor(0.2, 0.0, 0.2, 1.0);  
+    gl_context.clearDepth(1.0);                 
+    gl_context.clear(gl_context.COLOR_BUFFER_BIT | gl_context.DEPTH_BUFFER_BIT);
+
+    // enable attributes as needed
+    gl_context.enable(gl_context.DEPTH_TEST);           
+    gl_context.depthFunc(gl_context.LEQUAL);            
+
+    // update projection matrix
+    mat4.perspective(this._projectionMatrix, camera.fov * Math.PI / 180, camera.aspect, camera.near, camera.far);
+
+    // uniform - window dimensions
+    var screenDimensions = vec2.create();
+    screenDimensions[0] = this.HALF_SCREEN_WIDTH;
+    screenDimensions[1] = this.HALF_SCREEN_HEIGHT;
+
+    // positions vao
+    gl_context.bindBuffer(gl_context.ARRAY_BUFFER, this.buffers.position);
+    gl_context.vertexAttribPointer(this.programInfo.attribLocations.vertexPosition, 2, gl_context.FLOAT, false, 0, 0);
+    gl_context.enableVertexAttribArray(this.programInfo.attribLocations.vertexPosition);
+
+    // useMe()
+    gl_context.useProgram(this.programInfo.program);
+
+    // uniforms
+    gl_context.uniformMatrix4fv(this.programInfo.uniformLocations.projectionMatrix, false, this._projectionMatrix);
+    gl_context.uniformMatrix4fv(this.programInfo.uniformLocations.modelViewMatrix, false, this._viewMatrix);
+    gl_context.uniform2f(this.programInfo.uniformLocations.screenDimensions, false, screenDimensions);
+
+    // draw
+    gl_context.drawArrays(gl_context.TRIANGLE_STRIP, 0, this.VERTEX_COUNT);
+  }
+
 }
 
 export default Scene;

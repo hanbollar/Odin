@@ -13,10 +13,8 @@ export function abort(message) {
   throw message;
 }
 
-// Get the canvas element
+// Setup canvas and webgl context
 export const canvas = document.getElementById('canvas');
-
-// Initialize the WebGL context
 const glContext = canvas.getContext('webgl2');
 glContext.webgl2 = (typeof WebGL2RenderingContext !== "undefined" && glContext instanceof WebGL2RenderingContext);
 if (!glContext.webgl2) {
