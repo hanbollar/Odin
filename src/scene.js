@@ -4,15 +4,16 @@ import { initShaderProgram } from './utils';
 
 class Scene {
   constructor() {
-    this.HALF_SCREEN_WIDTH = canvas.width / 2.0;
-    this.HALF_SCREEN_HEIGHT = canvas.height / 2.0;
-    this.SCREEN_QUAD_POSITIONS = [
+    this._screenDimensions = vec2.create();
+    this._screenDimensions[0] = canvas.width / 2.0;
+    this._screenDimensions[1] = canvas.height / 2.0;
+    this._screenQuadPositions = [
        1.0,  1.0,
       -1.0,  1.0,
        1.0, -1.0,
       -1.0, -1.0,
     ];
-    this.VERTEX_COUNT = 4;
+    this._vertexCount = 4;
 
     this._projectionMatrix = mat4.create();
     this._viewMatrix = mat4.create();
@@ -24,29 +25,27 @@ class Scene {
       precision highp float;
       precision highp int;
 
-      in vec4 aVertexPosition;
+      in vec2 aVertexPosition;
       uniform mat4 uModelViewMatrix;
       uniform mat4 uProjectionMatrix;
       uniform vec2 uScreenDimensions;
 
-      out vec4 position;
+      out vec2 tex_coords;
 
       void main() {
         vec2 adjust = vec2(0.5, 0.5);
-        vec2 xy_loc = vec2(aVertexPosition) * adjust + adjust;
-        gl_Position = vec4(xy_loc.x, xy_loc.y, aVertexPosition.z, aVertexPosition.w);
-        position = gl_Position;
+        tex_coords = aVertexPosition * adjust + adjust;
+        gl_Position = vec4(tex_coords, 0, 1);
       }`;
     const fs = `#version 300 es
       precision highp float;
       precision highp int;
 
-      in vec4 position;
-      
+      in vec2 tex_coords;
 
       out vec4 outColor;
       void main() {
-       outColor = position;// vec4(gl_FragCoord.x / uScreenDimensions.x, gl_FragCoord.y / uScreenDimensions.y, 0, 1);
+       outColor = vec4(tex_coords.x, tex_coords.y, 0, 1);
       }`;
     this.shaderProgram = initShaderProgram(gl, vs, fs);
 
@@ -83,7 +82,7 @@ class Scene {
   initBuffers(gl_context) {
     const positionBuffer = gl_context.createBuffer();
     gl_context.bindBuffer(gl_context.ARRAY_BUFFER, positionBuffer);
-    gl_context.bufferData(gl_context.ARRAY_BUFFER, new Float32Array(this.SCREEN_QUAD_POSITIONS), gl_context.STATIC_DRAW);
+    gl_context.bufferData(gl_context.ARRAY_BUFFER, new Float32Array(this._screenQuadPositions), gl_context.STATIC_DRAW);
 
     return {
       position: positionBuffer,
@@ -91,7 +90,6 @@ class Scene {
   }
 
   drawScene(gl_context, programInfo, buffers) {
-   
     // clear all values before redrawing
     gl_context.clearColor(0.2, 0.0, 0.2, 1.0);  
     gl_context.clearDepth(1.0);                 
@@ -104,11 +102,6 @@ class Scene {
     // update projection matrix
     mat4.perspective(this._projectionMatrix, camera.fov * Math.PI / 180, camera.aspect, camera.near, camera.far);
 
-    // uniform - window dimensions
-    var screenDimensions = vec2.create();
-    screenDimensions[0] = this.HALF_SCREEN_WIDTH;
-    screenDimensions[1] = this.HALF_SCREEN_HEIGHT;
-
     // positions vao
     gl_context.bindBuffer(gl_context.ARRAY_BUFFER, this.buffers.position);
     gl_context.vertexAttribPointer(this.programInfo.attribLocations.vertexPosition, 2, gl_context.FLOAT, false, 0, 0);
@@ -120,12 +113,11 @@ class Scene {
     // uniforms
     gl_context.uniformMatrix4fv(this.programInfo.uniformLocations.projectionMatrix, false, this._projectionMatrix);
     gl_context.uniformMatrix4fv(this.programInfo.uniformLocations.modelViewMatrix, false, this._viewMatrix);
-    gl_context.uniform2f(this.programInfo.uniformLocations.screenDimensions, false, screenDimensions);
+    gl_context.uniform2f(this.programInfo.uniformLocations.screenDimensions, false, this._screenDimensions);
 
     // draw
-    gl_context.drawArrays(gl_context.TRIANGLE_STRIP, 0, this.VERTEX_COUNT);
+    gl_context.drawArrays(gl_context.TRIANGLE_STRIP, 0, this._vertexCount);
   }
-
 }
 
 export default Scene;
