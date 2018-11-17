@@ -13,9 +13,8 @@ camera.position.set(-10, 8, 0);
 cameraControls.target.set(0, 2, 0);
 const scene = new Scene();
 
-// render and update function linking
-makeRenderLoop(
-  function() {
-    scene.update()
-  }
-)();
+// makeRenderLoop(
+//   function() {
+//     scene.update()
+//   }
+// )();

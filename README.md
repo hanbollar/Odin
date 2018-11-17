@@ -36,7 +36,7 @@ In Progress - More information coming soon.
 Clone this repository
 Download and install Node.js
 Run npm install in the root directory which will download and install dependencies.
-npm install gpu.js --save
+npm install gpu.js
 ```
 
 #### Run
@@ -52,3 +52,6 @@ Run npm start and navigate to http://localhost:5650
 - [Project 5 GPU CIS 565 project](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus) - for node.js project setup
 - [gpu.js](http://gpu.rocks/) - for gpu.js info
 - [gpu.js github](https://github.com/gpujs/gpu.js) - for download instructions and how to use it in webgl framework
+- [gpu.js include examples](http://geoexamples.com/other/2018/04/30/mapping-with-gpujs.html]) - for how to properly include and setup gpu.js functions
+- [gpu.js typescript ex 1](https://staceytay.com/raytracer/)
+- [gpu.js typescript ex 2](https://github.com/abhisheksoni27/gpu.js-demo)

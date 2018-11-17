@@ -29,6 +29,24 @@ export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName,
 }) : glContext;
 
 export const gui = new DAT.GUI();
+ 
+ // CREATE INITIAL GPU SCREEN RENDER
+const GPU = require('gpu.js');
+export const gpu = new GPU({
+    canvas: canvas,
+    webgl: gl,
+    mode: gpu
+});
+
+const shadeScreen = gpu.createKernel(function(widthDim, heightDim) {
+  // like a fragment shader kernel
+  this.color(this.thread.x/widthDim, this.thread.y/heightDim, 0, 1);
+})
+.setOutput([canvas.clientWidth, canvas.clientHeight])
+.setGraphical(true);
+shadeScreen(canvas.clientWidth, canvas.clientHeight);
+const frameTexture = shadeScreen.getCanvas();
+document.getElementsByTagName('body')[0].appendChild(frameTexture);
 
 // initialize statistics widget
 const stats = new Stats();
@@ -40,8 +58,6 @@ document.body.appendChild(stats.domElement);
 
 // Initialize camera
 export const camera = new PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-
-// Initialize camera controls
 export const cameraControls = new OrbitControls(camera, canvas);
 cameraControls.enableDamping = true;
 cameraControls.enableZoom = true;
