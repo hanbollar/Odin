@@ -36,23 +36,19 @@ In Progress - More information coming soon.
 Clone this repository
 Download and install Node.js
 Run npm install in the root directory which will download and install dependencies.
-Run npm start and navigate to http://localhost:5650
+npm install gpu.js --save
 ```
 
 #### Run
-Need WebGL-capable browser to run this project (Chrome seems to work best).
-Some notable extensions that might be needed (check for support on [WebGL Report](http://webglreport.com/?v=2)) :
+Need WebGL2-capable browser to run this project (Chrome seems to work best).
+Check for support on [WebGL Report](http://webglreport.com/?v=2)) 
+
 ```
-OES_texture_float
-OES_texture_float_linear
-OES_element_index_uint
-EXT_frag_depth
-WEBGL_depth_texture
-WEBGL_draw_buffer
+Run npm start and navigate to http://localhost:5650
 ```
-If there are still issues, make sure you've updated your browser and video drivers.
 
 ## References
 
 - [Project 5 GPU CIS 565 project](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus) - for node.js project setup
-- [gpu.js](http://gpu.rocks/) - for gpu.js syntax and include file
+- [gpu.js](http://gpu.rocks/) - for gpu.js info
+- [gpu.js github](https://github.com/gpujs/gpu.js) - for download instructions and how to use it in webgl framework
