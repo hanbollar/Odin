@@ -29,8 +29,15 @@ export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName,
 }) : glContext;
 
 export const gui = new DAT.GUI();
- 
- // CREATE INITIAL GPU SCREEN RENDER
+
+// setup gui
+const params = {
+  title: "GUI",
+};
+gui.add(params, 'title');
+
+
+// GPU CREATION
 const GPU = require('gpu.js');
 export const gpu = new GPU({
     canvas: canvas,
@@ -38,7 +45,7 @@ export const gpu = new GPU({
     mode: gpu
 });
 
-const shadeScreen = gpu.createKernel(function(widthDim, heightDim) {
+export const shadeScreen = gpu.createKernel(function(widthDim, heightDim) {
   // like a fragment shader kernel
   this.color(this.thread.x/widthDim, this.thread.y/heightDim, 0, 1);
 })
@@ -47,6 +54,7 @@ const shadeScreen = gpu.createKernel(function(widthDim, heightDim) {
 shadeScreen(canvas.clientWidth, canvas.clientHeight);
 const frameTexture = shadeScreen.getCanvas();
 document.getElementsByTagName('body')[0].appendChild(frameTexture);
+
 
 // initialize statistics widget
 const stats = new Stats();
