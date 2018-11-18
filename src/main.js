@@ -5,6 +5,8 @@
 
 // gpu and updating functions below for simulation stepping
 
+
+// TODO FOR ERIC:
 // var imageKernel = gpu.createKernel(function(image) {
 //   const pixel = image[this.thread.y][this.thread.x];
 //   this.color(pixel[0], pixel[1], pixel[2], pixel[3]);
@@ -12,6 +14,18 @@
 //   output : [276, 183],
 //   graphical: true
 // });
+// ^^^ SEE THIS FOR EXAMPLE
+// VVV todo: eric PUT YOUR CODE HERE
+const gpu_marionetteTest = new GPU({
+    canvas: canvas,
+    webgl: gl,
+    mode: gpu
+});
+export const signed_distance_functions = gpu_marionetteTest.createKernel(function(dimX, dimY, dimZ) {
+  // TODO: ERIC
+})
+.setOutput([canvas.clientWidth, canvas.clientHeight])
+.setGraphical(true);
 
 const gpu_pToImage = new GPU({
     canvas: canvas,
@@ -29,12 +43,6 @@ export const positionsToImage = gpu_pToImage.createKernel(function(prevCalculate
 })
 .setOutput([canvas.clientWidth, canvas.clientHeight])
 .setGraphical(true);
-
-const gpu = new GPU({
-    canvas: canvas,
-    webgl: gl,
-    mode: gpu
-});
 
 const gpu_pUpdate = new GPU({
     canvas: canvas,
@@ -115,8 +123,10 @@ camera.position.set(-10, 8, 0);
 cameraControls.target.set(0, 2, 0);
 const scene = new Scene();
 
-const on_mode = 1;
-// first iteration (cpu -> gpu)
+const on_mode = 0;
+// shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
+
+//first iteration (cpu -> gpu)
 positionsToImage(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
 shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
 
@@ -125,9 +135,9 @@ document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
 
 function rendering() {
   positionsUpdate(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
-  shadeScreen(canvas.width, canvas.height, 3, positionsUpdate.getCanvas());
+  shadeScreen(canvas.width, canvas.height, on_mode, positionsUpdate.getCanvas());
 
-  // update render for each sim iteration loop
+  //update render for each sim iteration loop
   document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
 }
 
