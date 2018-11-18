@@ -40,8 +40,7 @@ npm install gpu.js
 ```
 
 #### Run
-Need WebGL2-capable browser to run this project (Chrome seems to work best).
-Check for support on [WebGL Report](http://webglreport.com/?v=2)) 
+Need WebGL2-capable browser to run this project. Check for support on [WebGL Report](http://webglreport.com/?v=2) 
 
 ```
 Run npm start and navigate to http://localhost:5650
