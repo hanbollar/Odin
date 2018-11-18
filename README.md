@@ -1,6 +1,6 @@
 Odin
 ===============
-*WebGL Crowd-Sim with GPU.js*
+*WebGL 2.0 Crowd-Sim with gpu.js*
 
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
@@ -50,8 +50,19 @@ Run npm start and navigate to http://localhost:5650
 ## References
 
 - [Project 5 GPU CIS 565 project](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus) - for node.js project setup
-- [gpu.js](http://gpu.rocks/) - for gpu.js info
-- [gpu.js github](https://github.com/gpujs/gpu.js) - for download instructions and how to use it in webgl framework
-- [gpu.js include examples](http://geoexamples.com/other/2018/04/30/mapping-with-gpujs.html]) - for how to properly include and setup gpu.js functions
-- [gpu.js typescript ex 1](https://staceytay.com/raytracer/)
-- [gpu.js typescript ex 2](https://github.com/abhisheksoni27/gpu.js-demo)
+- gpu.js
+	- [gpu.js](http://gpu.rocks/) - for gpu.js info
+	- [gpu.js github](https://github.com/gpujs/gpu.js) - for download instructions and how to use it in webgl framework
+	- [gpu.js include examples](http://geoexamples.com/other/2018/04/30/mapping-with-gpujs.html]) - for how to properly include and setup gpu.js functions
+	- [gpu.js typescript ex 1](https://staceytay.com/raytracer/)
+	- [gpu.js typescript ex 2](https://github.com/abhisheksoni27/gpu.js-demo)
+	- [issues with vec3 and vec4 in glsl in gpu.js](https://github.com/gpujs/gpu.js/issues/7)
+	- [add native function so can use alternate glsl functions like in a shader](https://github.com/gpujs/gpu.js/issues/62)
+	- [images as input and ouput for gpu.js](https://github.com/gpujs/gpu.js/issues/296)
+- Crowd Simulation
+	- [CrowdSimulation by Thalmann and Musse - BioCrowds](https://books.google.com/books?id=3Adh_2ZNGLAC&pg=PA146&lpg=PA146&dq=biocrowds%20algorithm&source=bl&ots=zsM86iYTot&sig=KQJU7_NagMK4rbpY0oYc3bwCh9o&hl=en&sa=X&ved=0ahUKEwik9JfPnubSAhXIxVQKHUybCxUQ6AEILzAE#v=onepage&q=biocrowds%20algorithm&f=false)
+	- [Austin Eng's explanation of BioCrowds](https://cis700-procedural-graphics.github.io/files/biocrowds_3_21_17.pdf), [Austin Eng](http://austin-eng.co/)
+	- [Dr. Musse's Crowds talk at VHLab 2016](http://www.inf.pucrs.br/~smusse/Animacao/2016/CrowdTalk.pdf)
+	- [Space Colonization Algorithm Paper 2012](https://www.sciencedirect.com/science/article/pii/S0097849311001713)
+- npm
+	- [mat3 linear algebra npm known funcs](https://www.npmjs.com/package/gl-matrix)

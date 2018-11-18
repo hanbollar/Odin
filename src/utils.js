@@ -41,3 +41,14 @@ function loadShader(gl_context, type, src) {
   }
   return shader;
 }
+
+export function canvasToImage(input_canvas) {
+  if (!input_canvas) {
+    console.log('canvasToImage: input_canvas is undefined');
+  }
+
+  var new_image = document.createElement("img"); 
+  new_image.src = input_canvas.toDataURL();
+
+  return new_image;
+}

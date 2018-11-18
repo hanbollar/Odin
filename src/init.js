@@ -1,4 +1,4 @@
-export const DEBUG = false && process.env.NODE_ENV === 'development';
+export const DEBUG = true && process.env.NODE_ENV === 'development';
 
 import DAT from 'dat.gui';
 import WebGLDebug from 'webgl-debug';
@@ -36,25 +36,13 @@ const params = {
 };
 gui.add(params, 'title');
 
-
-// GPU CREATION
+// GPU setup
 const GPU = require('gpu.js');
 export const gpu = new GPU({
     canvas: canvas,
     webgl: gl,
     mode: gpu
 });
-
-export const shadeScreen = gpu.createKernel(function(widthDim, heightDim) {
-  // like a fragment shader kernel
-  this.color(this.thread.x/widthDim, this.thread.y/heightDim, 0, 1);
-})
-.setOutput([canvas.clientWidth, canvas.clientHeight])
-.setGraphical(true);
-shadeScreen(canvas.clientWidth, canvas.clientHeight);
-const frameTexture = shadeScreen.getCanvas();
-document.getElementsByTagName('body')[0].appendChild(frameTexture);
-
 
 // initialize statistics widget
 const stats = new Stats();
