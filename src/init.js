@@ -27,6 +27,9 @@ if (!glContext.webgl2) {
 export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName, args) => {
   abort(WebGLDebug.glEnumToString(err) + ' was caused by call to: ' + funcName);
 }) : glContext;
+gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);//gl.drawingBufferWidth, gl.drawingBufferHeight);
+console.log(gl.drawingBufferHeight);
+console.log(gl.drawingBufferWidth);
 
 export const gui = new DAT.GUI();
 
@@ -66,6 +69,16 @@ function setSize(width, height) {
   canvas.height = height;
   camera.aspect = width / height;
   camera.updateProjectionMatrix();
+}
+
+export function resizeCanvas() {
+    var displayWidth  = canvas.clientWidth;
+    var displayHeight = canvas.clientHeight;
+
+    if (canvas.width  != displayWidth ||
+        canvas.height != displayHeight) {
+      setSize(displayWidth, displayHeight);
+    }
 }
 
 setSize(canvas.clientWidth, canvas.clientHeight);
