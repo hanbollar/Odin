@@ -2,18 +2,6 @@ import { canvas, camera, cameraControls, gui, gl, gpu } from './init';
 import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
 import { initShaderProgram } from './utils';
 
-// Initializing all positions
-// const initPositions = gpu.createKernel(function(xLoc, yLoc) { 
-//   if (this.thread.x == xLoc || this.thread.x == 2 * xLoc) {
-//     this.color.x = 1;
-//   }
-//   if (this.thread.y == yLoc || this.thread.y == 2* yLoc) {
-//     this.color.y = 1;
-//   }
-// })
-// .setOutput([20, 1])
-// .setGraphical(true);
-
 class Scene {
   constructor() {
     this._projectionMatrix = mat4.create();

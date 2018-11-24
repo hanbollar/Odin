@@ -1,12 +1,21 @@
  import { makeRenderLoop, camera, cameraControls, gui, gl, canvas } from './init';
+ import Renderer from './renderer'
  import { mat4, vec4, vec2 } from 'gl-matrix';
  import { canvasToImage } from './utils'
  import Scene from './scene';
 
-// gpu and updating functions below for simulation stepping
+ // import the renderer application
+require('./main');
+
+/*
+*
+*
+*    GPU PIPELINE FOR UPDATES
+*
+*
+*/ 
 
 
-// TODO FOR ERIC:
 // var imageKernel = gpu.createKernel(function(image) {
 //   const pixel = image[this.thread.y][this.thread.x];
 //   this.color(pixel[0], pixel[1], pixel[2], pixel[3]);
@@ -14,18 +23,6 @@
 //   output : [276, 183],
 //   graphical: true
 // });
-// ^^^ SEE THIS FOR EXAMPLE
-// VVV todo: eric PUT YOUR CODE HERE
-const gpu_marionetteTest = new GPU({
-    canvas: canvas,
-    webgl: gl,
-    mode: gpu
-});
-export const signed_distance_functions = gpu_marionetteTest.createKernel(function(dimX, dimY, dimZ) {
-  // TODO: ERIC
-})
-.setOutput([canvas.clientWidth, canvas.clientHeight])
-.setGraphical(true);
 
 const gpu_pToImage = new GPU({
     canvas: canvas,
@@ -114,9 +111,16 @@ shadeScreen.addNativeFunction('random', `highp float random(vec2 co)
 }`);
 
 
-/*************************************
-*************RENDER SETUP*************
-**************************************/
+/*
+*
+*
+*    SCENE AND RENDER SETUP FOR SCREEN REFRESHING
+*
+*
+*/
+
+// create renderer
+var render = new Renderer();
 
  // setup scene
 camera.position.set(-10, 8, 0);
@@ -124,14 +128,14 @@ cameraControls.target.set(0, 2, 0);
 const scene = new Scene();
 
 const on_mode = 0;
+
+
 // shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
-
 //first iteration (cpu -> gpu)
-positionsToImage(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
-shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
-
+// positionsToImage(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
+// shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
 // base render
-document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
+//document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
 
 function rendering() {
   positionsUpdate(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
@@ -143,7 +147,9 @@ function rendering() {
 
 makeRenderLoop(
   function() {
-    scene.update();
-    rendering();
+    //scene.update();
+    //rendering();
+
+    render.update();
   }
 )();
