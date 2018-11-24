@@ -29,21 +29,29 @@ ________________________________________________________________________________
 
 In Progress - More information coming soon.
 
+[Milestone 1](./milestones/Milestone1.md)
+
+[Milestone 2](./milestones/Milestone2.md)
+
+[Milestone 3](./milestones/Milestone3.md)
+
 ## Build and Run Instructions
 
 #### Build
 ```
 Clone this repository
 Download and install Node.js
-Run npm install in the root directory which will download and install dependencies.
-npm install gpu.js
+Run `npm install` in the root directory which will download and install dependencies.
+Lastly Run `npm install gpu.js`
 ```
 
 #### Run
 Need WebGL2-capable browser to run this project. Check for support on [WebGL Report](http://webglreport.com/?v=2) 
 
 ```
-Run npm start and navigate to http://localhost:5650
+Go to root directory
+Run `npm start`
+Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
 
 ## References
@@ -60,8 +68,15 @@ Run npm start and navigate to http://localhost:5650
 	- [images as input and ouput for gpu.js](https://github.com/gpujs/gpu.js/issues/296)
 - Crowd Simulation
 	- [CrowdSimulation by Thalmann and Musse - BioCrowds](https://books.google.com/books?id=3Adh_2ZNGLAC&pg=PA146&lpg=PA146&dq=biocrowds%20algorithm&source=bl&ots=zsM86iYTot&sig=KQJU7_NagMK4rbpY0oYc3bwCh9o&hl=en&sa=X&ved=0ahUKEwik9JfPnubSAhXIxVQKHUybCxUQ6AEILzAE#v=onepage&q=biocrowds%20algorithm&f=false)
-	- [Austin Eng's explanation of BioCrowds](https://cis700-procedural-graphics.github.io/files/biocrowds_3_21_17.pdf), [Austin Eng](http://austin-eng.co/)
+	- [Austin Eng's basic explanation of BioCrowds](https://cis700-procedural-graphics.github.io/files/biocrowds_3_21_17.pdf), [Austin Eng](http://austin-eng.co/)
 	- [Dr. Musse's Crowds talk at VHLab 2016](http://www.inf.pucrs.br/~smusse/Animacao/2016/CrowdTalk.pdf)
 	- [Space Colonization Algorithm Paper 2012](https://www.sciencedirect.com/science/article/pii/S0097849311001713)
 - npm
 	- [mat3 linear algebra npm known funcs](https://www.npmjs.com/package/gl-matrix)
+- webgl2 specifications
+	- [webgl2 vs webgl1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html)
+	- [canvas size vs gl framebuffer read only](https://github.com/KhronosGroup/WebGL/issues/2460)
+	- [issues with device pixel ratio](https://stackoverflow.com/questions/24209628/how-to-override-device-pixel-ratio)
+- Walking Figures
+	- [signed distance functions](http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/)
+	- [IQ's website](http://iquilezles.org/index.html)

@@ -59,10 +59,6 @@ class Renderer {
     //   },
     // };
 
-    // Here's where we call the routine that builds all the
-    // objects we'll be drawing.
-    // this.buffers = this.initBuffers(gl);
-
     this.time = 0;
 
     gl.clearColor(0.2, 0.0, 0.2, 1.0);  
