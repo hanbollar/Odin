@@ -4,17 +4,16 @@ import { initShaderProgram } from './utils';
 
 class Scene {
   constructor() {
-    this._projectionMatrix = mat4.create();
-    this._viewMatrix = mat4.create();
-    this._viewProjectionMatrix = mat4.create();
     this._simStep = 0;
 
-    this._numParticles = 5;
-    this.particles = [];
-    this.particlesVelocity = [];
-    for (var i = 0; i < this._numParticles; ++i) {
-      this.particles.push(vec3.create());
-      this.particlesVelocity.push(vec3.create());
+    this.numParticles = 10;
+    this.particle_positions = [];
+    this.particle_velocities = [];
+    this.particle_colors = [];
+    for (var i = 0; i < this.numParticles; ++i) {
+      this.particle_positions.push(vec3.create());
+      this.particle_velocities.push(vec3.create());
+      this.particle_colors.push(vec3.create());
     }
 
     this.createParticlePositions();
@@ -22,14 +21,18 @@ class Scene {
 
   createParticlePositions() {
     // TODO: later port this to be an image texture write using gpu.js for creation
-    for (var i = 0; i < this._numParticles; ++i) {
-      this.particles[i][0] = Math.random(canvas.width);
-      this.particles[i][1] = Math.random(canvas.height);
-      this.particles[i][2] = 0;
+    for (var i = 0; i < this.numParticles; ++i) {
+      this.particle_positions[i][0] = Math.random() * canvas.width;
+      this.particle_positions[i][1] = Math.random() * canvas.height;
+      this.particle_positions[i][2] = 0;
 
-      this.particlesVelocity[i][0] = Math.random(5);
-      this.particlesVelocity[i][1] = Math.random(5);
-      this.particlesVelocity[i][2] = 0;
+      this.particle_velocities[i][0] = Math.random() * 5;
+      this.particle_velocities[i][1] = Math.random() * 5;
+      this.particle_velocities[i][2] = 0;
+
+      this.particle_colors[i][0] = Math.random();
+      this.particle_colors[i][1] = Math.random();
+      this.particle_colors[i][2] = Math.random();
     }
   }
 
@@ -39,19 +42,19 @@ class Scene {
     var buffer_amount = 10;
     var temp_pos = vec3.create();
     var temp_velo = vec3.create();
-    for (; i < this._numParticles; ++i) {
-      temp_pos = this.particles[i];
-      temp_velo = this.particlesVelocity[i];
+    for (; i < this.numParticles; ++i) {
+      temp_pos = this.particle_positions[i];
+      temp_velo = this.particle_velocities[i];
 
       temp_pos = temp_pos + temp_velo;
 
       if (temp_pos.x < buffer_amount || temp_pos.x > canvas.width - buffer_amount
         || temp_pos.y < buffer_amount || temp_pos.y > canvas.height - buffer_amount) {
 
-        this.particles[i].x = clamp(temp_pos.x, buffer_amount, canvas.width - buffer_amount);
-        this.particles[i].y = clamp(temp_pos.y, buffer_amount, canvas.height - buffer_amount);
+        this.particle_positions[i].x = clamp(temp_pos.x, buffer_amount, canvas.width - buffer_amount);
+        this.particle_positions[i].y = clamp(temp_pos.y, buffer_amount, canvas.height - buffer_amount);
 
-        negate(this.particlesVelocity, this.particlesVelocity);
+        negate(this.particle_velocities, this.particle_velocities);
       }
     }
   }
@@ -59,7 +62,7 @@ class Scene {
   update() {
     this._simStep += 1;
     console.log('simulation iteration:'+ this._simStep);
-    this.moveParticlePositions();
+    //this.moveParticlePositions();
   }
 }
 
