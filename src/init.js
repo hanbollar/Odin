@@ -27,17 +27,19 @@ if (!glContext.webgl2) {
 export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName, args) => {
   abort(WebGLDebug.glEnumToString(err) + ' was caused by call to: ' + funcName);
 }) : glContext;
-gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);//gl.drawingBufferWidth, gl.drawingBufferHeight);
-console.log(gl.drawingBufferHeight);
-console.log(gl.drawingBufferWidth);
-
-export const gui = new DAT.GUI();
+gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);
+// ^^^ cant use gl.drawingBufferWidth, gl.drawingBufferHeight here because not matching approp dimensions. forcing the fit instead.
 
 // setup gui
-const params = {
+export const gui = new DAT.GUI();
+export const params = {
   title: "GUI",
+  render_mode: 0,
 };
 gui.add(params, 'title');
+gui.add(params, 'render_mode', 0, 4).step(1).onChange(function(newVal) {
+    params.render_mode = newVal;
+});
 
 // GPU setup
 const GPU = require('gpu.js');
