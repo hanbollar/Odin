@@ -52,3 +52,15 @@ export function canvasToImage(input_canvas) {
 
   return new_image;
 }
+
+export function mat4FromArray(output_mat4, array) {
+  if (!output_mat4) {
+    console.log('mat4FromArray: output_mat4 undefined');
+  } else if (!array) {
+    console.log('mat4FromArray: array undefined');
+  }
+
+  for (var i = 0; i < 16; ++i) {
+    output_mat4[i] = array[i];
+  }
+}

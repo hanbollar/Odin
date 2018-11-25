@@ -1,4 +1,4 @@
- import { makeRenderLoop, camera, cameraControls, gui, gl, canvas } from './init';
+ import { makeRenderLoop, camera, cameraControls, gui, gl, canvas, params } from './init';
  import Renderer from './renderer'
  import { mat4, vec4, vec2 } from 'gl-matrix';
  import { canvasToImage } from './utils'
@@ -64,7 +64,7 @@ const gpu = new GPU({
     mode: gpu
 });
 
-export const shadeScreen = gpu.createKernel(function(widthDim, heightDim, mode, inputImage) {
+export const shadeScreen = gpu.createKernel(function(widthDim, heightDim, on_mode, inputImage) {
   var xLoc = this.thread.x / widthDim;
   var yLoc = this.thread.y / heightDim;
 
@@ -79,14 +79,14 @@ export const shadeScreen = gpu.createKernel(function(widthDim, heightDim, mode, 
 
   // like a fragment shader kernel - default test
 
-  if (mode == 0) {
+  if (on_mode == 0) {
     // shader debug view
     red_channel = this.thread.x/widthDim;
     green_channel = this.thread.y/heightDim;
-  } else if (mode == noise_demo){
+  } else if (on_mode == noise_demo){
     // noise function demo
     red_channel = random(this.vec2(xLoc, yLoc));
-  } else if (mode == image_test) {
+  } else if (on_mode == image_test) {
     // Input type not supported (WebGL): [object HTMLCanvasElement]
     // red_channel = inputImage[this.thread.x].x;
     // green_channel = inputImage[this.thread.x].y;
@@ -127,8 +127,6 @@ camera.position.set(-10, 8, 0);
 cameraControls.target.set(0, 2, 0);
 const scene = new Scene();
 
-const on_mode = 0;
-
 
 // shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
 //first iteration (cpu -> gpu)
@@ -139,7 +137,7 @@ const on_mode = 0;
 
 function rendering() {
   positionsUpdate(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
-  shadeScreen(canvas.width, canvas.height, on_mode, positionsUpdate.getCanvas());
+  shadeScreen(canvas.width, canvas.height, params.render_mode, positionsUpdate.getCanvas());
 
   //update render for each sim iteration loop
   document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
@@ -147,9 +145,7 @@ function rendering() {
 
 makeRenderLoop(
   function() {
-    //scene.update();
-    //rendering();
-
+    scene.update();
     render.update();
   }
 )();

@@ -77,6 +77,8 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 	- [webgl2 vs webgl1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html)
 	- [canvas size vs gl framebuffer read only](https://github.com/KhronosGroup/WebGL/issues/2460)
 	- [issues with device pixel ratio](https://stackoverflow.com/questions/24209628/how-to-override-device-pixel-ratio)
+	- [Current Khronos specs](https://www.khronos.org/registry/webgl/specs/latest/2.0/#3.7.8)
 - Walking Figures
 	- [signed distance functions](http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/)
 	- [IQ's website](http://iquilezles.org/index.html)
+	- [Raymarching examples and figures](https://github.com/nicoptere/raymarching-for-THREE)
