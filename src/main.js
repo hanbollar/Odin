@@ -7,6 +7,25 @@
  // import the renderer application
 require('./main');
 
+
+/*
+*
+*
+*    SCENE SETUP
+*
+*
+*/ 
+
+// create renderer
+var render = new Renderer();
+
+ // setup scene
+camera.position.set(-10, 8, 0);
+cameraControls.target.set(0, 2, 0);
+
+const scene = new Scene();
+
+
 /*
 *
 *
@@ -29,17 +48,48 @@ const gpu_pToImage = new GPU({
     webgl: gl,
     mode: gpu
 });
-export const positionsToImage = gpu_pToImage.createKernel(function(prevCalculatedPositions, dimX, dimY, dimZ, numPositions) {
-  // TODO: make this work for x and y dimensions and not just linear in x direction
-  var on_index = this.thread.x;
-  if (this.thread.x < numPositions) {
-    this.color(prevCalculatedPositions[on_index][0] / dimX,
-               prevCalculatedPositions[on_index][1] / dimY,
-               prevCalculatedPositions[on_index][2] / dimZ, 1);
+export const positionsToImage = gpu_pToImage.createKernel(function(positions, colors) {
+  // depth buffer calculations based on cone
+  var max_depth = 1000000;
+  var red = 0;
+  var green = 0;
+  var blue = 0;
+  for (var i = 0; i < this.constants.length; ++i) {
+    var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
+                          this.vec2(positions[i][0], positions[i][1]));
+    // distance
+    if (depth < max_depth) {
+      red = colors[i][0];
+      green = colors[i][1];
+      blue = colors[i][2];
+      max_depth = depth;
+    }
   }
+  // this.color(1, 0, 1, 1);
+  this.color(red, green, blue, 1);
 })
+.setConstants({ length: scene.numParticles })
 .setOutput([canvas.clientWidth, canvas.clientHeight])
 .setGraphical(true);
+
+positionsToImage.addNativeFunction('coneDepth', `highp float coneDepth(vec2 position, vec2 cone_center)
+{
+    // cone math
+    // dist to center of cone
+    // we have height to radius ratio
+    // find height of cone at this radius
+    // this is depth to be returned
+
+    highp float distance = sqrt(  (position.x - cone_center.x) * (position.x - cone_center.x)
+                                + (position.y - cone_center.y) * (position.y - cone_center.y));
+
+    // for this, all cones will have height to radius ratio of h: 2, r: 1. so c = h / r = 2.
+    //highp float c = 2.0;
+
+    //return distance * c;
+
+    return distance;
+}`);
 
 const gpu_pUpdate = new GPU({
     canvas: canvas,
@@ -73,79 +123,44 @@ export const shadeScreen = gpu.createKernel(function(widthDim, heightDim, on_mod
   var blue_channel = 0;
   var alpha_channel = 1;
 
-  var debug_view = 0;
-  var noise_demo = 1;
-  var image_test = 2;
-
-  // like a fragment shader kernel - default test
-
-  if (on_mode == 0) {
-    // shader debug view
-    red_channel = this.thread.x/widthDim;
-    green_channel = this.thread.y/heightDim;
-  } else if (on_mode == noise_demo){
-    // noise function demo
-    red_channel = random(this.vec2(xLoc, yLoc));
-  } else if (on_mode == image_test) {
-    // Input type not supported (WebGL): [object HTMLCanvasElement]
-    // red_channel = inputImage[this.thread.x].x;
-    // green_channel = inputImage[this.thread.x].y;
-    // blue_channel = inputImage[this.thread.x].z;
-  } else {
-    blue_channel = 1;
-  }
+    red_channel = inputImage[this.thread.x].x;
+    green_channel = inputImage[this.thread.x].y;
+    blue_channel = inputImage[this.thread.x].z;
 
   this.color(red_channel, green_channel, blue_channel, alpha_channel);
 })
 .setOutput([canvas.clientWidth, canvas.clientHeight])
 .setGraphical(true);
 
-shadeScreen.addNativeFunction('random', `highp float random(vec2 co)
-{
-    highp float a = 12.9898;
-    highp float b = 78.233;
-    highp float c = 43758.5453;
-    highp float dt= dot(co.xy ,vec2(a,b));
-    highp float sn= mod(dt,3.14);
-    return fract(sin(sn) * c);
-}`);
-
 
 /*
 *
 *
-*    SCENE AND RENDER SETUP FOR SCREEN REFRESHING
+*    RENDER SETUP FOR SCREEN REFRESHING
 *
 *
 */
 
-// create renderer
-var render = new Renderer();
-
- // setup scene
-camera.position.set(-10, 8, 0);
-cameraControls.target.set(0, 2, 0);
-const scene = new Scene();
-
 
 // shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
 //first iteration (cpu -> gpu)
-// positionsToImage(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
+//positionsToImage(scene.particle_positions, scene.particle_colors, scene._numParticles);
 // shadeScreen(canvas.width, canvas.height, on_mode, canvasToImage(positionsToImage.getCanvas()));
 // base render
 //document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
 
-function rendering() {
-  positionsUpdate(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
-  shadeScreen(canvas.width, canvas.height, params.render_mode, positionsUpdate.getCanvas());
-
-  //update render for each sim iteration loop
-  document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
-}
-
 makeRenderLoop(
   function() {
     scene.update();
-    render.update();
+    if (params.render_mode == 0) {
+      render.update();
+    } else {
+      //positionsUpdate(scene.particles, canvas.width, canvas.height, 1, scene._numParticles);
+      //shadeScreen(canvas.width, canvas.height, params.render_mode, positionsUpdate.getCanvas());
+      //document.getElementsByTagName('body')[0].appendChild(shadeScreen.getCanvas());
+      
+      positionsToImage(scene.particle_positions, scene.particle_colors);
+      document.getElementsByTagName('body')[0].appendChild(positionsToImage.getCanvas());
+    }
   }
 )();
