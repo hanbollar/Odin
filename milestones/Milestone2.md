@@ -17,4 +17,12 @@ Developers:
 
 ### New Features implemented
 
+- Resolved question - there is a way to keep all important data on the gpu between the kernal calls due to using `outputToTexture` for image creation. see link [here](https://github.com/gpujs/gpu.js/issues/203#issuecomment-337374123) and referred to in main readme.
+- voronoi movement using cone structures as "depth" test for associated pixels
+- Reupdated pipeline so now using webgl2 vertex and fragment shaders for main visual but using texture reading from all gpu.js calculations for scene to actual do agent movement
+
 ### Issues still to resolve from this Milestone
+
+- had to switch back to `setGraphical(true)` instead of `setOutputToTexture(true)` --> so have cpu to gpu and gpu to cpu transfering and not being a direct [pipeline](https://en.wikipedia.org/wiki/Pipeline_(computing)) that setOutputToTexture guarantees.
+	- right now framework is in place for gpu to gpu texture passing but doesnt work for some reason (still looking into this)
+	- writing with everything `toCanvas()` atm
