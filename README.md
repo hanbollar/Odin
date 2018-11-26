@@ -56,11 +56,10 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 
 ## References
 
-- [Project 5 GPU CIS 565 project](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus) - for node.js project setup
 - gpu.js
-	- [gpu.js](http://gpu.rocks/) - for gpu.js info
-	- [gpu.js github](https://github.com/gpujs/gpu.js) - for download instructions and how to use it in webgl framework
-	- [gpu.js include examples](http://geoexamples.com/other/2018/04/30/mapping-with-gpujs.html]) - for how to properly include and setup gpu.js functions
+	- [gpu.js](http://gpu.rocks/)
+	- [gpu.js github](https://github.com/gpujs/gpu.js) 
+	- [gpu.js include examples](http://geoexamples.com/other/2018/04/30/mapping-with-gpujs.html])
 	- [gpu.js typescript ex 1](https://staceytay.com/raytracer/)
 	- [gpu.js typescript ex 2](https://github.com/abhisheksoni27/gpu.js-demo)
 	- [issues with vec3 and vec4 in glsl in gpu.js](https://github.com/gpujs/gpu.js/issues/7)
@@ -76,6 +75,7 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 	- [Space Colonization Algorithm Paper 2012](https://www.sciencedirect.com/science/article/pii/S0097849311001713)
 - npm
 	- [mat3 linear algebra npm known funcs](https://www.npmjs.com/package/gl-matrix)
+	- [Project 5 GPU CIS 565 project for node.js project setup](https://github.com/CIS565-Fall-2018/Project5-WebGL-Clustered-Deferred-Forward-Plus)
 - webgl2 specifications
 	- [webgl2 vs webgl1](https://webgl2fundamentals.org/webgl/lessons/webgl1-to-webgl2.html)
 	- [canvas size vs gl framebuffer read only](https://github.com/KhronosGroup/WebGL/issues/2460)
