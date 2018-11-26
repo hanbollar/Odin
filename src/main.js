@@ -88,7 +88,7 @@ gpu.addFunction(computeMarkerWeight, computeMarkerWeight_options);
 ****** GPU KERNEL METHODS ********
 **********************************/
 
-export const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_positions) {
+const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_positions) {
   const pixel = updated_positions[this.thread.x][this.thread.y];
   this.color(pixel[0], pixel[1], 0, 1);
 })
@@ -96,7 +96,7 @@ export const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_pos
 // .setOutputToTexture(true);
 .setGraphical(true);
 
-export const initialPositionsToImage = gpu.createKernel(function(positions) {
+const initialPositionsToImage = gpu.createKernel(function(positions) {
   var red = 0;
   var green = 0;
   var blue = 0;
@@ -105,20 +105,21 @@ export const initialPositionsToImage = gpu.createKernel(function(positions) {
               positions[this.thread.x][1] / this.constants.screen_y,
               0,
               1);
+  // return [positions[this.thread.x][0] / this.constants.screen_x, positions[this.thread.x][1] / this.constants.screen_y];
 })
 .setConstants({ screen_x: canvas.clientWidth, screen_y: canvas.clientHeight })
 .setOutput([scene.numParticles, 1])
 // .setOutputToTexture(true);
 .setGraphical(true);
 
-export const positionsToVoronoi = gpu.createKernel(function(positions, colors) {
+const positionsToVoronoi = gpu.createKernel(function(positions, positions_texture, colors) {
   var max_depth = this.constants.flt_max;
   var red = 0;
   var green = 0;
   var blue = 0;
 
   for (var i = 0; i < this.constants.length; ++i) {
-    // const pixel = oldPositions_image[i][0];
+    // const pixel = positions_texture[i][0];
     // const pos_x = pixel[0] * screen_x;
     // const pos_y = pixel[1] * screen_y;
 
@@ -135,8 +136,10 @@ export const positionsToVoronoi = gpu.createKernel(function(positions, colors) {
     } else {
       // var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
       //                       this.vec2(pos_x, pos_y));
+
       var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
                             this.vec2(positions[i][0], positions[i][1]));
+
       if (depth < max_depth) {
         red = colors[i][0];
         green = colors[i][1];
@@ -152,18 +155,29 @@ export const positionsToVoronoi = gpu.createKernel(function(positions, colors) {
 // .setOutputToTexture(true)
 .setGraphical(true)
 
-export const velocityUpdate = gpu.createKernel(function(old_positions, voronoi, colors) {
+const velocityUpdate = gpu.createKernel(function(old_positions, voronoi, colors) {
   // TODO
+
+  // calc weight for each pixel in relation to old positions
+  // already have ^^ this technically through voronoi? need to change though process for voronoi with ids?? maybe with texture output instead
+
+  // follow v = sum of vi's where each vi is the mi distance * weight of mi in relation to target / ave 
+
+
   this.color(0, 0, 0, 0);
 })
+.setConstants({ length: scene.numParticles, screen_x : canvas.clientWidth, screen_y: canvas.clientHeight, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS })
 .setOutput([scene.numParticles, 1])
 // .setOutputToTexture(true);
 .setGraphical(true);
 
-export const positionsUpdate = gpu.createKernel(function(old_positions, velocities_image) {
+const positionsUpdate = gpu.createKernel(function(old_positions, velocities_image) {
   // TODO
   const pixel = old_positions[this.thread.x][this.thread.y];
   this.color(pixel[0], pixel[1], 0, 1);
+
+
+  // new p = old p + velo
 })
 .setOutput([scene.numParticles, 1])
 // .setOutputToTexture(true)
@@ -182,19 +196,19 @@ export const positionsUpdate = gpu.createKernel(function(old_positions, velociti
 ****** INIT SETUP ********
 **************************/
 
-var positions_tex1 = initialPositionsToImage(scene.particle_positions);
+// var positions_tex1 = initialPositionsToImage(scene.particle_positions);
 // document.getElementsByTagName('body')[0].appendChild(positions_tex1.webGl.canvas);
-// console.log(scene.particle_positions);
-var voronoi_tex = positionsToVoronoi(scene.particle_positions, scene.particle_colors);
-document.getElementsByTagName('body')[0].appendChild(voronoi_tex.webGl.canvas);
+// document.getElementsByTagName('body')[0].appendChild(initialPositionsToImage.getCanvas()); 
+// var voronoi_tex = positionsToVoronoi(positions_tex1, scene.particle_colors);
+// document.getElementsByTagName('body')[0].appendChild(voronoi_tex.webGl.canvas);
 // var velocity_tex = velocityUpdate(positions_tex1, voronoi_tex, scene.particle_colors);
 // var positions_tex2 = positionsUpdate(positions_tex1, velocity_tex);
 // NOTE: IF SCREEN SIZE CHANGES MIGHT HAVE TO HANDLE BUFFER CHANGE AS WELL BETWEEN THESE CASTINGS - MAKE ADJUSTMENT BY RESTARTING SIM SO NO IMPROPER PIXEL CALCS
 
 
-// initialPositionsToImage(scene.particle_positions);
-// positionsToVoronoi(initialPositionsToImage.getCanvas(), scene.particle_colors);
-// document.getElementsByTagName('body')[0].appendChild(positionsToVoronoi.getCanvas());
+initialPositionsToImage(scene.particle_positions);
+positionsToVoronoi(scene.particle_positions, scene.particle_positions, scene.particle_colors);
+document.getElementsByTagName('body')[0].appendChild(positionsToVoronoi.getCanvas()); //--------------------------
 // document.getElementsByTagName('body')[0].appendChild(voronoi_tex.webGl.canvas);
 // velocityUpdate(positions_tex1, voronoi_tex, scene.particle_colors).getCanvas();
 // positionsUpdate(positions_tex1, velocity_tex).getCanvas();
@@ -208,7 +222,7 @@ makeRenderLoop(
   function() {
     scene.update();
     if (params.render_mode == 0) {
-      render.update();
+      // render.update();
     } else {
       // buffer swap
       // positions_tex1 = copyMemoryBackToFirstBuffer(positions_tex2).getCanvas();

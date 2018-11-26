@@ -10,10 +10,12 @@ class Scene {
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
+    this.particle_targets = [];
     for (var i = 0; i < this.numParticles; ++i) {
       this.particle_positions.push(vec3.create());
       this.particle_velocities.push(vec3.create());
       this.particle_colors.push(vec3.create());
+      this.particle_targets.push(vec3.create());
     }
 
     // create initial values
@@ -29,6 +31,17 @@ class Scene {
       this.particle_colors[i][0] = Math.random();
       this.particle_colors[i][1] = Math.random();
       this.particle_colors[i][2] = Math.random();
+
+      // TODO - update targets to be a better value
+      if (i % 2 == 0) {
+        this.particle_targets[i][0] = 1;
+        this.particle_targets[i][1] = 1;
+        this.particle_targets[i][2] = 1;
+      } else {
+        this.particle_targets[i][0] = 500;
+        this.particle_targets[i][1] = 500;
+        this.particle_targets[i][2] = 500;
+      }
     }
   }
 
