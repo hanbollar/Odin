@@ -8,6 +8,8 @@ Developers:
 
 ## Current Progress:
 
+[View Presentation](./milestone-2/Milestone2_Presentation.pdf)
+
 ### Issues resolved from last milestone
 
 - Fixed webgl2 gl framebuffer (read-only variable) not matching requested output
@@ -25,4 +27,3 @@ Developers:
 
 - had to switch back to `setGraphical(true)` instead of `setOutputToTexture(true)` --> so have cpu to gpu and gpu to cpu transfering and not being a direct [pipeline](https://en.wikipedia.org/wiki/Pipeline_(computing)) that setOutputToTexture guarantees.
 	- right now framework is in place for gpu to gpu texture passing but doesnt work for some reason (still looking into this)
-	- writing with everything `toCanvas()` atm
