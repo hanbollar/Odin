@@ -61,7 +61,7 @@ class Scene {
 
   update() {
     this._simStep += 1;
-    console.log('simulation iteration:'+ this._simStep);
+    //console.log('simulation iteration:'+ this._simStep);
     //this.moveParticlePositions();
   }
 }

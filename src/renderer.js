@@ -1,15 +1,14 @@
 import { camera, cameraControls, gui, gl, canvas, resizeCanvas } from './init';
 import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
 import { initShaderProgram, mat4FromArray } from './utils';
+import Walker from './walker.js'
 
 class Renderer 
 {
   constructor() 
   {
     this.startTime = Date.now();
-    this.time = 0;
-
-
+    this.walker = new Walker();
 
     const vs = 
     `   #version 300 es
@@ -226,8 +225,6 @@ class Renderer
             //vec2 skeleton = line( position, anchors[0] + vec3(0.,1.,0.), anchors[1], .5 );
             vec2 skeleton = sphere( position, radius * 2.2, (anchors[0] + anchors[1]) / 2.0 + vec3(0.,1.,0.));
 
-            //skeleton = intersectionAB( skeleton, vec2( perlin(position+dir)*1.2 , 1. ) );
-
             //blend distance (color blend)
             float dis0 = skeleton.x;
 
@@ -235,18 +232,11 @@ class Renderer
             skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
             skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
             skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
-            //skeleton = smin( skeleton, sdCappedCone( position, length(anchors[4]-anchors[3]), radius, radius*0.5 ), blendFactor);
-
-            //hand
-            //skeleton = smin( skeleton, roundBox( position, vec3( .1,.5,.1 ), .5, anchors[4], quat ) + o, blendFactor );
 
             //right arm
             skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
             skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
             skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
-
-            //hand
-            //skeleton = smin( skeleton, roundBox( position, vec3( .1,.5,.1 ), .5, anchors[7], quat ) + o, blendFactor );
 
             //spine
             skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
@@ -255,21 +245,16 @@ class Renderer
             skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
 
             //left leg
-            //skeleton = smin( skeleton, line( position, anchors[8], anchors[9], radius * .5 ), blendFactor * .75 );
             skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
             skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
 
             //right leg
-            //skeleton = smin( skeleton, line( position, anchors[8], anchors[12], radius * .5 ), blendFactor * .75 );
             skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
             skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
 
-            // vec2 _out = smin( ground, skeleton, 1.5 );
             vec2 _out = skeleton;
             _out.y = smoothstep( 0., dis0, _out.x );
             return _out;
-
-
         }
 
         /////////////////////////////////////////////////////////////////////////
@@ -277,7 +262,6 @@ class Renderer
         // the methods below this need the field function
 
         /////////////////////////////////////////////////////////////////////////
-
 
         //the actual raymarching from:
         //https://github.com/stackgl/glsl-raytrace/blob/master/index.glsl
@@ -305,7 +289,8 @@ class Renderer
 
         //https://github.com/stackgl/glsl-sdf-normal
 
-        vec3 calcNormal(vec3 pos, float eps) {
+        vec3 calcNormal(vec3 pos, float eps) 
+        {
           const vec3 v1 = vec3( 1.0,-1.0,-1.0);
           const vec3 v2 = vec3(-1.0,-1.0, 1.0);
           const vec3 v3 = vec3(-1.0, 1.0,-1.0);
@@ -368,13 +353,16 @@ class Renderer
         v_position: gl.getAttribLocation(this.shader_program, 'v_position'),
         u_MVP: gl.getUniformLocation(this.shader_program, 'u_viewProj'),
 
+        resolution: gl.getUniformLocation(this.shader_program, 'resolution'),
+        camera: gl.getUniformLocation(this.shader_program, 'camera'),
+        target: gl.getUniformLocation(this.shader_program, 'target'),
         time: gl.getUniformLocation(this.shader_program, 'time'),
         randomSeed: gl.getUniformLocation(this.shader_program, 'randomSeed'),
         fov: gl.getUniformLocation(this.shader_program, 'fov'),
         raymarchMaximumDistance: gl.getUniformLocation(this.shader_program, 'raymarchMaximumDistance'),
         raymarchPrecision: gl.getUniformLocation(this.shader_program, 'raymarchPrecision'),
-        camera: gl.getUniformLocation(this.shader_program, 'camera'),
-        target: gl.getUniformLocation(this.shader_program, 'target')
+        
+        anchors: gl.getUniformLocation(this.shader_program, 'anchors')
     };
 
     // variables to be used in program
@@ -389,13 +377,14 @@ class Renderer
     this.projectionMatrix = mat4.create();
     this.VP = mat4.create();
     this.canvas_dimensions = vec2.create();
+
   }
 
 
   update() 
   {
     this.time += 1;
-    console.log('time:'+ this.time);
+    //console.log('time:'+ this.time);
 
     // updating values
     mat4FromArray(this.viewMatrix, camera.modelViewMatrix.elements);
@@ -433,6 +422,7 @@ class Renderer
     gl.uniformMatrix4fv(this.locations.u_viewProj, false, this.VP);
 
     // for sdf walking
+    gl.uniform2f(this.locations.resolution, this.canvas_dimensions[0], this.canvas_dimensions[1]);
     gl.uniform1f(this.locations.time, (Date.now() - this.startTime) * .001);
     gl.uniform1f(this.locations.randomSeed, Math.random());
     gl.uniform1f(this.locations.fov, camera.fov * Math.PI / 180);
@@ -440,6 +430,9 @@ class Renderer
     gl.uniform1f(this.locations.raymarchPrecision, 0.001);
     gl.uniform3f(this.locations.camera, camera.position.x, camera.position.y, camera.position.z);
     gl.uniform3f(this.locations.target, 0, 0, 0);
+    // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
+    // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
+    gl.uniform3fv(this.locations.anchors, this.walker.update());
 
     // draw
     gl.drawArrays(gl.TRIANGLES, 0, 6);
