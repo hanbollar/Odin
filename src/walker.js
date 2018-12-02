@@ -29,6 +29,9 @@ export default class Walker
         }
 
         //this.material.uniforms[ 'anchors' ] = {type: "v3v", value: this.vertices };
+        this.position = new THREE.Vector3(0, 0, 0);
+        this.forward = new THREE.Vector3(0, 0, 0.1);
+
 
         this.reset();
 
@@ -158,14 +161,22 @@ export default class Walker
         //this.material.uniforms[ 'anchors' ].value = this.vertices;
         //this.material.uniforms[ 'anchors' ].needsUpdate = true;
         
+        // move walker
+        var quat = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (Math.random()*2.0-1.0)*Math.PI/360.0);
+        this.forward.applyQuaternion(quat);
+        this.position.add(this.forward);
+
         // convert THREE.Vector3 into vec3.x, vec3.y, vec3.z components
         // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
     	// [vec3(1, 2, 3), vec3(4, 5, 6)] have be converted to [1, 2, 3, 4, 5, 6]
         var vec3Array = [];
+        var pos = this.position;
         this.vertices.forEach(function(element) {
-        	vec3Array.push(element.x);
-        	vec3Array.push(element.y);
-        	vec3Array.push(element.z);
+        	// apply world rotation to local anchor points
+        	var transformedElement = element.applyQuaternion(quat);
+        	vec3Array.push(transformedElement.x + pos.x);
+        	vec3Array.push(transformedElement.y + pos.y);
+        	vec3Array.push(transformedElement.z + pos.z);
         });
 
         return vec3Array;

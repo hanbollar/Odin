@@ -20,7 +20,7 @@ require('./main');
 var render = new Renderer();
 
  // setup scene
-camera.position.set(6, 10, 12);
+camera.position.set(32, 10, 32);
 cameraControls.target.set(0, 0, 0);
 
 const scene = new Scene();
