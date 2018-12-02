@@ -6,7 +6,7 @@ class Scene {
   constructor() {
     this._simStep = 0;
 
-    this.numParticles = 10;
+    this.numParticles = 200;
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
