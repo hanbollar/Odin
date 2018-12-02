@@ -29,7 +29,7 @@ export function initShaderProgram(gl_context, vsSource, fsSource) {
   return program;
 }
 
-export function loadShader(gl_context, src, type) {
+function loadShader(gl_context, src, type) {
   const shader = gl_context.createShader(type);
   gl_context.shaderSource(shader, src);
   gl_context.compileShader(shader);

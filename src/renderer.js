@@ -1,6 +1,6 @@
 import { camera, cameraControls, gui, gl, canvas, resizeCanvas } from './init';
 import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
-import { initShaderProgram, loadShader, mat4FromArray } from './utils';
+import { initShaderProgram, mat4FromArray } from './utils';
 import Walker from './walker.js'
 
 class Renderer 
@@ -102,17 +102,14 @@ class Renderer
     //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     //GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo)
 
-    /*
-    var tex_vs = loadShader(gl, tex_vertex_shader_src, gl.VERTEX_SHADER);
-    var tex_fs = loadShader(gl, tex_fragment_shader_src, gl.FRAGMENT_SHADER);
-    var tex_shader_program = initShaderProgram(gl, tex_vs, tex_fs);
+    var tex_shader_program = initShaderProgram(gl, tex_vertex_shader_src, tex_fragment_shader_src);
     gl.useProgram(tex_shader_program);
-    */
+    
     //
 
 
 
-
+    // FOR CROWD SIMULATION MAIN SCENE
 
 
     /*  Now draw the main scene, which is 3D, using the texture. */
