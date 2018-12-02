@@ -97,48 +97,47 @@ const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_positions)
 .setGraphical(true);
 
 const initialPositionsToImage = gpu.createKernel(function(positions) {
-  var red = 0;
-  var green = 0;
-  var blue = 0;
+  // a 2d array is stepped through as [width][height] s.t. [this.thread.y][this.thread.x]
+  const vec2_y = this.thread.x;
+  const vec2_x = this.thread.y;
 
-  this.color(positions[this.thread.x][0] / this.constants.screen_x,
-              positions[this.thread.x][1] / this.constants.screen_y,
-              0,
-              1);
-  // return [positions[this.thread.x][0] / this.constants.screen_x, positions[this.thread.x][1] / this.constants.screen_y];
+  const x_val = positions[vec2_x][0] / this.constants.screen_x;
+  const y_val = positions[vec2_x][1] / this.constants.screen_y;
+
+  // are we on first component of vec2 or second component of vec2
+  return x_val * (1 - vec2_y) + y_val * (vec2_y);
 })
 .setConstants({ screen_x: canvas.clientWidth, screen_y: canvas.clientHeight })
-.setOutput([scene.numParticles, 1])
-// .setOutputToTexture(true);
-.setGraphical(true);
+.setOutput([scene.numParticles, 2])
+.setOutputToTexture(true);
+//.setGraphical(true);
 
-const positionsToVoronoi = gpu.createKernel(function(positions, positions_texture, colors) {
+const positionsToVoronoi = gpu.createKernel(function(positions_texture, colors) {
   var max_depth = this.constants.flt_max;
   var red = 0;
   var green = 0;
   var blue = 0;
 
   for (var i = 0; i < this.constants.length; ++i) {
-    // const pixel = positions_texture[i][0];
-    // const pos_x = pixel[0] * screen_x;
-    // const pos_y = pixel[1] * screen_y;
+    const pos_x = positions_texture[i][0] * this.constants.screen_x;
+    const pos_y = positions_texture[i][1] * this.constants.screen_y;
 
-    // if (abs(this.thread.x - pos_x) < this.constants.agent_vis_rad
-    //   && abs(this.thread.y - pos_y) < this.constants.agent_vis_rad) {
+    if (abs(this.thread.x - pos_x) < this.constants.agent_vis_rad
+      && abs(this.thread.y - pos_y) < this.constants.agent_vis_rad) {
 
-    if (abs(this.thread.x - positions[i][0]) < this.constants.agent_vis_rad
-        && abs(this.thread.y - positions[i][1]) < this.constants.agent_vis_rad) {
+    // if (abs(this.thread.x - positions[i][0]) < this.constants.agent_vis_rad
+    //     && abs(this.thread.y - positions[i][1]) < this.constants.agent_vis_rad) {
       // agent position
       red = 0;
       green = 0;
       blue = 0;
       i = this.constants.length;
     } else {
-      // var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
-      //                       this.vec2(pos_x, pos_y));
-
       var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
-                            this.vec2(positions[i][0], positions[i][1]));
+                            this.vec2(pos_x, pos_y));
+
+      // var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
+      //                       this.vec2(positions[i][0], positions[i][1]));
 
       if (depth < max_depth) {
         red = colors[i][0];
@@ -206,8 +205,9 @@ const positionsUpdate = gpu.createKernel(function(old_positions, velocities_imag
 // NOTE: IF SCREEN SIZE CHANGES MIGHT HAVE TO HANDLE BUFFER CHANGE AS WELL BETWEEN THESE CASTINGS - MAKE ADJUSTMENT BY RESTARTING SIM SO NO IMPROPER PIXEL CALCS
 
 
-initialPositionsToImage(scene.particle_positions);
-positionsToVoronoi(scene.particle_positions, scene.particle_positions, scene.particle_colors);
+var pos = initialPositionsToImage(scene.particle_positions);
+console.log(pos);
+positionsToVoronoi(pos, scene.particle_colors);
 document.getElementsByTagName('body')[0].appendChild(positionsToVoronoi.getCanvas()); //--------------------------
 // document.getElementsByTagName('body')[0].appendChild(voronoi_tex.webGl.canvas);
 // velocityUpdate(positions_tex1, voronoi_tex, scene.particle_colors).getCanvas();
