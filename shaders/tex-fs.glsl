@@ -75,6 +75,7 @@ float getMarker(int i, float walkertime, float initphase)
 
 
 // rotate from vector vFrom to vector vTo
+// https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
 vec4 quatFromUnitVectors(vec3 vFrom, vec3 vTo)
 {
     vec3 v1 = vec3(0.0, 0.0, 0.0);
@@ -102,7 +103,7 @@ vec4 quatFromUnitVectors(vec3 vFrom, vec3 vTo)
     return normalize(quat);
 }
 
-
+// http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
 mat4 transformationMatrix(vec3 pos, vec4 quat)
 {
     return mat4(1.0 - 2.0*quat.y*quat.y - 2.0*quat.z*quat.z,          2.0*quat.x*quat.y - 2.0*quat.z*quat.w,          2.0*quat.x*quat.z + 2.0*quat.y*quat.w,    pos.x,
@@ -131,8 +132,8 @@ void main(void)
         vec4 rotationQuaternion = quatFromUnitVectors(vec3(0.0, 0.0, 1.0), agentForwards[agentIndex]);
         vec4 worldPos = transformationMatrix(agentPositions[agentIndex], rotationQuaternion) * localPos;
         
-        fragColor = worldPos;
-        //fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+        fragColor = vec4(worldPos.x / 5000.0, worldPos.y / 5000.0, worldPos.z / 5000.0, 1.0);
+        //fragColor = vec4(0.0, 1.0, 0.0, 1.0);
     }
 }
 

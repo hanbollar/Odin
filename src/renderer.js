@@ -29,11 +29,7 @@ class Renderer
 
     this.tex_uniforms =
     {
-        //meanwalker: gl.getUniformLocation(this.tex_shader_program, 'meanwalker'),
-        //genderaxis: gl.getUniformLocation(this.tex_shader_program, 'genderaxis'),
-        //weightaxis: gl.getUniformLocation(this.tex_shader_program, 'weightaxis'),
-        //nervousaxis: gl.getUniformLocation(this.tex_shader_program, 'nervousaxis'),
-        //happyaxis: gl.getUniformLocation(this.tex_shader_program, 'happyaxis'),
+        v_position: gl.getAttribLocation(this.tex_shader_program, 'v_position'),
         agentPositions: gl.getUniformLocation(this.tex_shader_program, 'agentPositions'),
         agentForwards: gl.getUniformLocation(this.tex_shader_program, 'agentForwards'),
         agentTimeOffsets: gl.getUniformLocation(this.tex_shader_program, 'agentTimeOffsets'),
@@ -55,17 +51,19 @@ class Renderer
         raymarchMaximumDistance: gl.getUniformLocation(this.crowd_shader_program, 'raymarchMaximumDistance'),
         raymarchPrecision: gl.getUniformLocation(this.crowd_shader_program, 'raymarchPrecision'),
         
-        anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors')
+        anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors'),
+
+        u_image: gl.getUniformLocation(this.crowd_shader_program, 'u_image'),
     };
 
     // variables to be used in program
     this.quad_vertex_buffer_data = new Float32Array([ 
-        -1.0, -1.0,
-         1.0, -1.0,
-        -1.0,  1.0,
-        -1.0,  1.0,
-         1.0, -1.0,
-         1.0,  1.0]);
+        -1.0, -1.0, 0.0, 1.0,
+         1.0, -1.0, 0.0, 1.0,
+        -1.0,  1.0, 0.0, 1.0,
+        -1.0,  1.0, 0.0, 1.0,
+         1.0, -1.0, 0.0, 1.0,
+         1.0,  1.0, 0.0, 1.0]);
     this.viewMatrix = mat4.create();
     this.projectionMatrix = mat4.create();
     this.VP = mat4.create();
@@ -94,7 +92,7 @@ class Renderer
 
   drawScene() 
   {
-
+    gl.viewport(0, 0, 16, 16);
 
     // FOR RENDERING TO TEXTURE
 
@@ -102,8 +100,8 @@ class Renderer
     // for more info on gl framebuffer texture functions:
     // http://math.hws.edu/graphicsbook/c7/s4.html
 
-    var texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    var agent_tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, agent_tex);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -112,7 +110,7 @@ class Renderer
 
     var fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
-    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, agent_tex, 0);
 
     /*
     var rbo = GL.createRenderbuffer()
@@ -120,11 +118,28 @@ class Renderer
     GL.renderbufferStorage(GL.RENDERBUFFER, GL.DEPTH_COMPONENT16, width, height)
     */
 
-    //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+    //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, agent_tex, 0);
     //GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo)
 
     gl.useProgram(this.tex_shader_program);
     
+    gl.clear( gl.DEPTH_BUFFER_BIT )
+
+    // vbo
+    var tex_vertex_buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, tex_vertex_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.quad_vertex_buffer_data, gl.STATIC_DRAW);
+    
+    // vao
+    gl.enableVertexAttribArray(this.tex_uniforms.v_position);
+    gl.vertexAttribPointer(this.tex_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
+
+
+
+
+
+    // uniforms
+
     var agentPos = [];
     for (var i = 0; i < 16; i++)
     {
@@ -133,7 +148,6 @@ class Renderer
         agentPos.push(0.0);
     }
     gl.uniform3fv(this.tex_uniforms.agentPositions, agentPos);
-
 
     var agentFwd = [];
     for (var j = 0; j < 16; j++)
@@ -157,16 +171,23 @@ class Renderer
 
     //
 
+    // draw, 6 vertices because double sided
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+
+
+
+
 
 
     // FOR CROWD SIMULATION MAIN SCENE
 
+    // fixes resizing window
+    gl.viewport(0, 0, this.canvas_dimensions[0], this.canvas_dimensions[1]);
 
-    /*  Now draw the main scene, which is 3D, using the texture. */
-    gl.bindTexture(gl.TEXTURE_2D, null);
+    // Now draw the main scene, which is 3D, using the texture.
+    //gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Draw to default framebuffer.
-
-
 
 
 
@@ -187,7 +208,7 @@ class Renderer
     
     // vao
     gl.enableVertexAttribArray(this.crowd_uniforms.v_position);
-    gl.vertexAttribPointer(this.crowd_uniforms.v_position, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(this.crowd_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
     
     // uniforms
     gl.uniformMatrix4fv(this.crowd_uniforms.u_viewProj, false, this.VP);
@@ -205,7 +226,13 @@ class Renderer
     // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
     gl.uniform3fv(this.crowd_uniforms.anchors, this.walker.update());
 
-    // draw
+    // passing agent data texture to crowd shader
+    gl.uniform1i(this.crowd_uniforms.u_image, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, agent_tex);
+
+
+    // draw, 6 vertices because double sided
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
     // after draw

@@ -16,8 +16,9 @@ void main()
 */
 
 
-/*
+
 uniform vec2 resolution;
+uniform sampler2D u_image;
 
 void main() 
 {
@@ -27,26 +28,16 @@ void main()
     // Output to screen
     //fragColor = vec4(uv, 0.0, 1.0);
 
-    if (mod(gl_FragCoord.x, 16.0) == 0.5)
-    {
-        fragColor = vec4(0.0, 0.0, 1.0, 1.0);
-    }
-    else if (mod(gl_FragCoord.x, 16.0) == 1.5)
-    {
-        fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-    }
-    else if (mod(gl_FragCoord.x, 16.0) == 15.5)
-    {
-        fragColor = vec4(1.0, 1.0, 0.0, 1.0);
-    }
-    else
-    {
-        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
-    }
+    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+
+    vec2 texCoord = vec2(gl_FragCoord.x / resolution.x, gl_FragCoord.y / resolution.y);
+    vec4 colour = texture(u_image, texCoord.xy);
+    fragColor = colour;
+        
 }
-*/
 
 
+/*
 // resources: https://github.com/nicoptere/raymarching-for-THREE
 
 uniform vec2 resolution;
@@ -56,6 +47,7 @@ uniform float raymarchMaximumDistance;
 uniform float raymarchPrecision;
 uniform vec3 camera;
 uniform vec3 target;
+uniform sampler2D u_image; 
 
 //uniform samplerCube cubemap;
 uniform vec3 anchors[15];
@@ -334,3 +326,5 @@ void main()
     }
 
 }
+
+*/
