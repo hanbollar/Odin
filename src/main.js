@@ -204,7 +204,10 @@ const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_texture,
   const on_col_green = colors[on_pos_index];
   const on_col_blue = colors[on_pos_index];
 
-  return 10; // zero velocity for now just checking pipeline update
+  // voronoi texture position values are in 0-1 range.
+  // want velocity to also be in this output range.
+
+  return 0.01; // zero velocity for now just checking pipeline update
 })
 .setConstants({ length: scene.numParticles, screen_x : canvas.clientWidth, screen_y: canvas.clientHeight })
 .setOutput([scene.numParticles, 2])
@@ -226,13 +229,6 @@ const positionsUpdate_superKernel = gpu.combineKernels(velocityUpdate, positions
   return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_texture, colors, target));
 });
 
-
-// const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_positions) {
-//   return updated_positions[this.thread.y][this.thread.x];
-// })
-// .setOutput([scene.numParticles, 2])
-// .setOutputToTexture(true);
-
 /********************
 *
 *
@@ -251,30 +247,11 @@ var context2d = canvas2d.getContext('2d');
 canvas2d = resizeSpecificCanvas(canvas2d);
 
 var pos_1 = initialPositionsToImage(scene.particle_positions);
+var pos_2;
+var data;
+var voronoi_texture;
 var targets = initialTargetsToImage(scene.particle_targets);
 var colors = initialColorsToImage(scene.particle_colors);
-
-// begin steps for iteration loop
-colorByVoronoi(pos_1, colors, targets);
-/// convert voronoi from getCanvas to gpu texture
-/// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes
-/// so doing the multiple canvases
-// voronoi to canvas 2d
-context2d = draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
-var data = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
-// voronoi as texture
-var voronoi_texture = importTexture(data);
-
-var updated_pos = positionsUpdate_superKernel(voronoi_texture, pos_1, colors, targets);
-console.log(updated_pos);
-
-
-// //var voronoiWithWhite = voronoiToVoronoiWithWhiteBuffer(voronoi);
-// // var velocities = velocityUpdate(pos_1, voronoi, colors, targets);
-// // var pos_2 = positionsUpdate(pos_1, velocities);
-// // renderPositionsToCanvas(pos_2);
-// //pos_1 = copyMemoryBackToFirstBuffer(pos_2);
-// document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
 
 
 /*************************
@@ -283,20 +260,20 @@ console.log(updated_pos);
 
 makeRenderLoop(
   function() {
-    // scene.update();
+    // begin steps for iteration loop
+    colorByVoronoi(pos_1, colors, targets);
+    document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
+    /// convert voronoi from getCanvas to gpu texture
+    /// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes so doing the multiple canvases
+    // voronoi to canvas 2d
+    context2d = draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
+    data = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
+    voronoi_texture = importTexture(data);
 
-    // if (params.render_mode == 0) {
-    //   // render.update();
-    // } else {
-      // buffer swap
-      // positions_tex1 = copyMemoryBackToFirstBuffer(positions_tex2).getCanvas();
+    pos_2 = positionsUpdate_superKernel(voronoi_texture, pos_1, colors, targets);
 
-      // voronoi_tex = positionsToVoronoi(positions_tex1, scene.particle_colors).getCanvas();
-      // velocity_tex = velocityUpdate(positions_tex1, voronoi_tex, scene.particle_colors).getCanvas();
-      // positions_tex2 = positionsUpdate(positions_tex1, velocity_tex).getCanvas();
-      // // TODO LATER: use this tex2 as input to renderer for actual position locations of marionette
-
-      // document.getElementsByTagName('body')[0].appendChild(voronoi_tex);
-    // }
+    // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
+    // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
+    pos_1 = pos_2;
   }
 )();

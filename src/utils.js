@@ -66,9 +66,9 @@ function loadImage(imageSource, context)
     return imageObj;
 }
 
+var img = new window.Image();
 export function draw2dImage(input_canvas, context2d, strDataURI) {
     "use strict";
-    var img = new window.Image();
     img.addEventListener("load", function () {
         context2d.drawImage(img, 0, 0);
     });
