@@ -68,6 +68,7 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 	- ["uniform" variables for these kernels](https://gist.github.com/rveciana/7419081f8931227769bae5255579e792)
 	- [output to texture maintains info on gpu, no cpu transfer needed](https://github.com/gpujs/gpu.js/issues/203#issuecomment-337374123)
 	- [canvas as kernel input & syntaxing for setOutputToTexture vs setGraphical(true)](https://github.com/gpujs/gpu.js/issues/229)
+	- [super kernel for optimized method to method information transfering](https://github.com/gpujs/gpu.js#combining-kernels)
 - Crowd Simulation
 	- [CrowdSimulation by Thalmann and Musse - BioCrowds](https://books.google.com/books?id=3Adh_2ZNGLAC&pg=PA146&lpg=PA146&dq=biocrowds%20algorithm&source=bl&ots=zsM86iYTot&sig=KQJU7_NagMK4rbpY0oYc3bwCh9o&hl=en&sa=X&ved=0ahUKEwik9JfPnubSAhXIxVQKHUybCxUQ6AEILzAE#v=onepage&q=biocrowds%20algorithm&f=false)
 	- [Austin Eng's basic explanation of BioCrowds](https://cis700-procedural-graphics.github.io/files/biocrowds_3_21_17.pdf), [Austin Eng](http://austin-eng.co/)
@@ -81,6 +82,7 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 	- [canvas size vs gl framebuffer read only](https://github.com/KhronosGroup/WebGL/issues/2460)
 	- [issues with device pixel ratio](https://stackoverflow.com/questions/24209628/how-to-override-device-pixel-ratio)
 	- [Current Khronos specs](https://www.khronos.org/registry/webgl/specs/latest/2.0/#3.7.8)
+	- [canvas 2d rendering ctx for backup canvas purposes](https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D)
 - Walking Figures
 	- [signed distance functions](http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/)
 	- [IQ's website](http://iquilezles.org/index.html)

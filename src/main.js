@@ -1,7 +1,7 @@
  import { makeRenderLoop, camera, cameraControls, gui, gl, gpu, canvas, params } from './init';
  import Renderer from './renderer'
  import { mat4, vec4, vec2 } from 'gl-matrix';
- import { draw2dImage, resizeCanvas} from './utils'
+ import { draw2dImage, resizeSpecificCanvas} from './utils'
  import Scene from './scene';
 
 const FLT_MAX = Math.pow(3.402823466, 38);
@@ -187,7 +187,7 @@ var importTexture = gpu.createKernel(function (input) {
 .setOutputToTexture(true)
 .setOutput([canvas.clientWidth, canvas.clientHeight, 4]);
 
-const velocityUpdate = gpu.createKernel(function(old_positions, voronoi, colors, target) {
+const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_texture, colors, target) {
   // calc weight for each pixel in relation to old positions
   // already have ^^ this technically through voronoi? need to change though process for voronoi with ids?? maybe with texture output instead
 
@@ -204,15 +204,11 @@ const velocityUpdate = gpu.createKernel(function(old_positions, voronoi, colors,
   const on_col_green = colors[on_pos_index];
   const on_col_blue = colors[on_pos_index];
 
-  return 0; // zero velocity for now just checking pipeline update
+  return 10; // zero velocity for now just checking pipeline update
 })
 .setConstants({ length: scene.numParticles, screen_x : canvas.clientWidth, screen_y: canvas.clientHeight })
 .setOutput([scene.numParticles, 2])
 //.setOutputToTexture(true);
-
-// const velocityUpdate_superKernel = gpu.combineKernels(importTexture, velocityUpdate, function(voronoi_canvas, old_positions, colors, target) {
-//   return velocityUpdate(importTexture(voronoi_canvas), old_positions, colors, target);
-// });
 
 const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
   // an array of vec2s - created as 2d array is stepped through as
@@ -226,6 +222,9 @@ const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
 .setOutput([scene.numParticles, 2])
 //.setOutputToTexture(true)
 
+const positionsUpdate_superKernel = gpu.combineKernels(velocityUpdate, positionsUpdate, function(voronoi_texture, old_positions, colors, target) {
+  return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_texture, colors, target));
+});
 
 
 // const copyMemoryBackToFirstBuffer = gpu.createKernel(function(updated_positions) {
@@ -249,34 +248,25 @@ const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
 
 var canvas2d = document.getElementById('canvas2d');
 var context2d = canvas2d.getContext('2d');
-canvas2d = resizeCanvas(canvas2d);
+canvas2d = resizeSpecificCanvas(canvas2d);
 
 var pos_1 = initialPositionsToImage(scene.particle_positions);
 var targets = initialTargetsToImage(scene.particle_targets);
 var colors = initialColorsToImage(scene.particle_colors);
+
 // begin steps for iteration loop
 colorByVoronoi(pos_1, colors, targets);
-draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
-var d = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
-console.log(d);
+/// convert voronoi from getCanvas to gpu texture
+/// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes
+/// so doing the multiple canvases
+// voronoi to canvas 2d
+context2d = draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
+var data = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
+// voronoi as texture
+var voronoi_texture = importTexture(data);
 
-// // var img = new Image;
-// // img.onload = function(){
-// //   context2d.drawImage(img,0,0);
-// //   var img = new Image;
-// //   img.onload = function(){
-// //     context2d.drawImage(img,0,0);
-// //     // diff them here
-// //   };
-// //   img.src = colorByVoronoi.getCanvas().toDataURL();
-// // };
-// // img.src = colorByVoronoi.getCanvas().toDataURL();
-
-
-// // toDataURL()->load image->drawImage()->getImageData().
-
-// var velo = velocityUpdate_superKernel(out, pos_1, colors, targets);
-// console.log(velo);
+var updated_pos = positionsUpdate_superKernel(voronoi_texture, pos_1, colors, targets);
+console.log(updated_pos);
 
 
 // //var voronoiWithWhite = voronoiToVoronoiWithWhiteBuffer(voronoi);

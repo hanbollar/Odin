@@ -73,10 +73,10 @@ export function draw2dImage(input_canvas, context2d, strDataURI) {
         context2d.drawImage(img, 0, 0);
     });
     img.setAttribute("src", strDataURI);
-    return img;
+    return context2d;
 }
 
-export function resizeCanvas(input_canvas) {
+export function resizeSpecificCanvas(input_canvas) {
     // Lookup the size the browser is displaying the canvas.
   var displayWidth  = input_canvas.clientWidth;
   var displayHeight = input_canvas.clientHeight;
