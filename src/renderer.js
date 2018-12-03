@@ -14,6 +14,9 @@ class Renderer
     //
     // crowd_vertex_shader_src, crowd_fragment_shader_src 
     // are from shaders.js built by GRUNT, look at Gruntfile.js
+    // https://gruntjs.com/getting-started
+    // https://www.npmjs.com/package/grunt-glsl
+    //
     // WHENEVER YOU UPDATE A SHADER, RUN grunt IN COMMAND LINE
     //
     // HOW TO INSTALL GRUNT:
@@ -21,22 +24,38 @@ class Renderer
     // sudo npm install -g grunt-cli
     // npm install
     // grunt
-    this.shader_program = initShaderProgram(gl, crowd_vertex_shader_src, crowd_fragment_shader_src);
+    this.tex_shader_program = initShaderProgram(gl, tex_vertex_shader_src, tex_fragment_shader_src);
+    this.crowd_shader_program = initShaderProgram(gl, crowd_vertex_shader_src, crowd_fragment_shader_src);
 
-    this.locations = {
-        v_position: gl.getAttribLocation(this.shader_program, 'v_position'),
-        u_MVP: gl.getUniformLocation(this.shader_program, 'u_viewProj'),
+    this.tex_uniforms =
+    {
+        //meanwalker: gl.getUniformLocation(this.tex_shader_program, 'meanwalker'),
+        //genderaxis: gl.getUniformLocation(this.tex_shader_program, 'genderaxis'),
+        //weightaxis: gl.getUniformLocation(this.tex_shader_program, 'weightaxis'),
+        //nervousaxis: gl.getUniformLocation(this.tex_shader_program, 'nervousaxis'),
+        //happyaxis: gl.getUniformLocation(this.tex_shader_program, 'happyaxis'),
+        agentPositions: gl.getUniformLocation(this.tex_shader_program, 'agentPositions'),
+        agentForwards: gl.getUniformLocation(this.tex_shader_program, 'agentForwards'),
+        agentTimeOffsets: gl.getUniformLocation(this.tex_shader_program, 'agentTimeOffsets'),
+        time: gl.getUniformLocation(this.tex_shader_program, 'time'),
+        texDimension: gl.getUniformLocation(this.tex_shader_program, 'texDimension')
+    };
 
-        resolution: gl.getUniformLocation(this.shader_program, 'resolution'),
-        camera: gl.getUniformLocation(this.shader_program, 'camera'),
-        target: gl.getUniformLocation(this.shader_program, 'target'),
-        time: gl.getUniformLocation(this.shader_program, 'time'),
-        randomSeed: gl.getUniformLocation(this.shader_program, 'randomSeed'),
-        fov: gl.getUniformLocation(this.shader_program, 'fov'),
-        raymarchMaximumDistance: gl.getUniformLocation(this.shader_program, 'raymarchMaximumDistance'),
-        raymarchPrecision: gl.getUniformLocation(this.shader_program, 'raymarchPrecision'),
+    this.crowd_uniforms = 
+    {
+        v_position: gl.getAttribLocation(this.crowd_shader_program, 'v_position'),
+        u_MVP: gl.getUniformLocation(this.crowd_shader_program, 'u_viewProj'),
+
+        resolution: gl.getUniformLocation(this.crowd_shader_program, 'resolution'),
+        camera: gl.getUniformLocation(this.crowd_shader_program, 'camera'),
+        target: gl.getUniformLocation(this.crowd_shader_program, 'target'),
+        time: gl.getUniformLocation(this.crowd_shader_program, 'time'),
+        randomSeed: gl.getUniformLocation(this.crowd_shader_program, 'randomSeed'),
+        fov: gl.getUniformLocation(this.crowd_shader_program, 'fov'),
+        raymarchMaximumDistance: gl.getUniformLocation(this.crowd_shader_program, 'raymarchMaximumDistance'),
+        raymarchPrecision: gl.getUniformLocation(this.crowd_shader_program, 'raymarchPrecision'),
         
-        anchors: gl.getUniformLocation(this.shader_program, 'anchors')
+        anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors')
     };
 
     // variables to be used in program
@@ -87,6 +106,8 @@ class Renderer
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 16, 16, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
     var fbo = gl.createFramebuffer();
@@ -102,9 +123,38 @@ class Renderer
     //gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     //GL.framebufferRenderbuffer(GL.FRAMEBUFFER, GL.DEPTH_ATTACHMENT, GL.RENDERBUFFER, rbo)
 
-    var tex_shader_program = initShaderProgram(gl, tex_vertex_shader_src, tex_fragment_shader_src);
-    gl.useProgram(tex_shader_program);
+    gl.useProgram(this.tex_shader_program);
     
+    var agentPos = [];
+    for (var i = 0; i < 16; i++)
+    {
+        agentPos.push(0.0 + 2.0*i);
+        agentPos.push(0.0);
+        agentPos.push(0.0);
+    }
+    gl.uniform3fv(this.tex_uniforms.agentPositions, agentPos);
+
+
+    var agentFwd = [];
+    for (var j = 0; j < 16; j++)
+    {
+        agentFwd.push(0.0);
+        agentFwd.push(0.0);
+        agentFwd.push(1.0);
+    }
+    gl.uniform3fv(this.tex_uniforms.agentForwards, agentFwd);
+
+    var agentOff = [];
+    for (var k = 0; k < 16; k++)
+    {
+        agentOff.push(0.0);
+    }
+    gl.uniform1fv(this.tex_uniforms.agentTimeOffsets, agentOff);
+
+    gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
+    gl.uniform1i(this.tex_uniforms.texDimension, 16);
+    
+
     //
 
 
@@ -128,7 +178,7 @@ class Renderer
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  
 
     // useMe()
-    gl.useProgram(this.shader_program);
+    gl.useProgram(this.crowd_shader_program);
 
     // vbo
     var quad_vertex_buffer = gl.createBuffer();
@@ -136,24 +186,24 @@ class Renderer
     gl.bufferData(gl.ARRAY_BUFFER, this.quad_vertex_buffer_data, gl.STATIC_DRAW);
     
     // vao
-    gl.enableVertexAttribArray(this.locations.v_position);
-    gl.vertexAttribPointer(this.locations.v_position, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(this.crowd_uniforms.v_position);
+    gl.vertexAttribPointer(this.crowd_uniforms.v_position, 2, gl.FLOAT, false, 0, 0);
     
     // uniforms
-    gl.uniformMatrix4fv(this.locations.u_viewProj, false, this.VP);
+    gl.uniformMatrix4fv(this.crowd_uniforms.u_viewProj, false, this.VP);
 
     // for sdf walking
-    gl.uniform2f(this.locations.resolution, this.canvas_dimensions[0], this.canvas_dimensions[1]);
-    gl.uniform1f(this.locations.time, (Date.now() - this.startTime) * .001);
-    gl.uniform1f(this.locations.randomSeed, Math.random());
-    gl.uniform1f(this.locations.fov, camera.fov * Math.PI / 180);
-    gl.uniform1f(this.locations.raymarchMaximumDistance, 500);
-    gl.uniform1f(this.locations.raymarchPrecision, 0.001);
-    gl.uniform3f(this.locations.camera, camera.position.x, camera.position.y, camera.position.z);
-    gl.uniform3f(this.locations.target, 0, 0, 0);
+    gl.uniform2f(this.crowd_uniforms.resolution, this.canvas_dimensions[0], this.canvas_dimensions[1]);
+    gl.uniform1f(this.crowd_uniforms.time, (Date.now() - this.startTime) * .001);
+    gl.uniform1f(this.crowd_uniforms.randomSeed, Math.random());
+    gl.uniform1f(this.crowd_uniforms.fov, camera.fov * Math.PI / 180);
+    gl.uniform1f(this.crowd_uniforms.raymarchMaximumDistance, 500);
+    gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.001);
+    gl.uniform3f(this.crowd_uniforms.camera, camera.position.x, camera.position.y, camera.position.z);
+    gl.uniform3f(this.crowd_uniforms.target, 0, 0, 0);
     // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
     // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
-    gl.uniform3fv(this.locations.anchors, this.walker.update());
+    gl.uniform3fv(this.crowd_uniforms.anchors, this.walker.update());
 
     // draw
     gl.drawArrays(gl.TRIANGLES, 0, 6);

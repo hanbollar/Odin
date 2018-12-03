@@ -25,9 +25,27 @@ void main()
     //vec2 uv = vec2(gl_FragCoord.x, gl_FragCoord.y) / resolution.xy;
 
     // Output to screen
-    //gl_FragColor = vec4(uv, 0.0, 1.0);
+    //fragColor = vec4(uv, 0.0, 1.0);
+
+    if (mod(gl_FragCoord.x, 16.0) == 0.5)
+    {
+        fragColor = vec4(0.0, 0.0, 1.0, 1.0);
+    }
+    else if (mod(gl_FragCoord.x, 16.0) == 1.5)
+    {
+        fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    }
+    else if (mod(gl_FragCoord.x, 16.0) == 15.5)
+    {
+        fragColor = vec4(1.0, 1.0, 0.0, 1.0);
+    }
+    else
+    {
+        fragColor = vec4(1.0, 0.0, 0.0, 1.0);
+    }
 }
 */
+
 
 // resources: https://github.com/nicoptere/raymarching-for-THREE
 
