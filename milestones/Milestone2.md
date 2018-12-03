@@ -23,6 +23,8 @@ Developers:
 - voronoi movement using cone structures as "depth" test for associated pixels
 - Reupdated pipeline so now using webgl2 vertex and fragment shaders for main visual but using texture reading from all gpu.js calculations for scene to actual do agent movement
 
+![](./milestone-3/pipeline_changes_lastmilestone.png)
+
 ### Issues still to resolve from this Milestone
 
 - had to switch back to `setGraphical(true)` instead of `setOutputToTexture(true)` --> so have cpu to gpu and gpu to cpu transfering and not being a direct [pipeline](https://en.wikipedia.org/wiki/Pipeline_(computing)) that setOutputToTexture guarantees.
