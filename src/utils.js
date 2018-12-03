@@ -53,6 +53,45 @@ export function canvasToImage(input_canvas) {
   return new_image;
 }
 
+function loadImage(imageSource, context)
+{
+    var imageObj = new Image();
+    imageObj.onload = function()
+    {
+        context.drawImage(imageObj, 0, 0);
+        var imageData = context.getImageData(0,0,10,10);
+        readImage(imageData);
+    };
+    imageObj.src = imageSource;
+    return imageObj;
+}
+
+export function draw2dImage(input_canvas, context2d, strDataURI) {
+    "use strict";
+    var img = new window.Image();
+    img.addEventListener("load", function () {
+        context2d.drawImage(img, 0, 0);
+    });
+    img.setAttribute("src", strDataURI);
+    return img;
+}
+
+export function resizeCanvas(input_canvas) {
+    // Lookup the size the browser is displaying the canvas.
+  var displayWidth  = input_canvas.clientWidth;
+  var displayHeight = input_canvas.clientHeight;
+ 
+  // Check if the canvas is not the same size.
+  if (input_canvas.width  != displayWidth ||
+      input_canvas.height != displayHeight) {
+ 
+    // Make the canvas the same size
+    input_canvas.width  = displayWidth;
+    input_canvas.height = displayHeight;
+  }
+  return input_canvas;
+}
+
 export function mat4FromArray(output_mat4, array) {
   if (!output_mat4) {
     console.log('mat4FromArray: output_mat4 undefined');
