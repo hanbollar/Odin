@@ -4,9 +4,8 @@
 
 precision mediump float;
 
-//in vec2 uv_color;
-
 out vec4 fragColor;
+
 
 /*
 void main() 
@@ -16,6 +15,8 @@ void main()
 */
 
 
+/*
+// AGENT RENDER TO TEXTURE DATA DEBUGGER
 
 uniform vec2 resolution;
 uniform sampler2D u_image;
@@ -24,20 +25,17 @@ void main()
 {
     // Normalized pixel coordinates (from 0 to 1)
     //vec2 uv = vec2(gl_FragCoord.x, gl_FragCoord.y) / resolution.xy;
-
     // Output to screen
     //fragColor = vec4(uv, 0.0, 1.0);
 
-    fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 
     vec2 texCoord = vec2(gl_FragCoord.x / resolution.x, gl_FragCoord.y / resolution.y);
     vec4 colour = texture(u_image, texCoord.xy);
     fragColor = colour;
-        
 }
+*/
 
 
-/*
 // resources: https://github.com/nicoptere/raymarching-for-THREE
 
 uniform vec2 resolution;
@@ -48,9 +46,9 @@ uniform float raymarchPrecision;
 uniform vec3 camera;
 uniform vec3 target;
 uniform sampler2D u_image; 
+uniform int texDimension;
 
-//uniform samplerCube cubemap;
-uniform vec3 anchors[15];
+//uniform vec3 anchors[15];
 
 
 //uses most of the StackGL methods
@@ -181,65 +179,120 @@ float zigzag( float x, float m )
 const int raymarchSteps = 50;
 const float PI = 3.14159;
 
-//no height
-vec2 plane( vec3 p , vec3 n) { return vec2( dot(p, n), 1. ); }
-//with height
-vec2 plane( vec3 p , vec4 n) { return vec2( dot(p, n.xyz) + n.w, 1. ); }
-
 vec2 field( vec3 position )
 {
-    //position
-    vec3 zero = vec3(0.);
+    vec2 skeleton = vec2(100000000000.0, 1.0);
 
-    //rotation
-    vec4 quat = vec4( 1.0, 0.0, 0.0, 0.5 );
+    for (int agentY = 0; agentY < 2; agentY++)
+    {
+        for (int agentX = 0; agentX < texDimension / 16; agentX = agentX + 16)
+        {
+            vec2 startPos = vec2(float(agentX) + 0.5, float(agentY) + 0.5);
 
-    float rad = 500.;
-    vec3 dir = vec3(.0,.0, time * 4.);
-    //vec2 ground = sphere( position + perlin( ( position + dir ) * .1 ), rad, vec3( 0.,-rad + 2.,0. ) );
-    //ground = unionAB( ground, plane( position - vec3( 0.,100.,0. ), vec3( 0.,-1.,0. ) ) );
+            vec4 anchor0 = texture(u_image, (startPos + vec2(1.0, 0.0))/float(texDimension) );
+            vec4 anchor1 = texture(u_image, (startPos + vec2(2.0, 0.0))/float(texDimension) );
+            vec4 anchor2 = texture(u_image, (startPos + vec2(3.0, 0.0))/float(texDimension) );
+            vec4 anchor3 = texture(u_image, (startPos + vec2(4.0, 0.0))/float(texDimension) );
+            vec4 anchor4 = texture(u_image, (startPos + vec2(5.0, 0.0))/float(texDimension) );
+            vec4 anchor5 = texture(u_image, (startPos + vec2(6.0, 0.0))/float(texDimension) );
+            vec4 anchor6 = texture(u_image, (startPos + vec2(7.0, 0.0))/float(texDimension) );
+            vec4 anchor7 = texture(u_image, (startPos + vec2(8.0, 0.0))/float(texDimension) );
+            vec4 anchor8 = texture(u_image, (startPos + vec2(9.0, 0.0))/float(texDimension) );
+            vec4 anchor9 = texture(u_image, (startPos + vec2(10.0, 0.0))/float(texDimension) );
+            vec4 anchor10 = texture(u_image, (startPos + vec2(11.0, 0.0))/float(texDimension) );
+            vec4 anchor11 = texture(u_image, (startPos + vec2(12.0, 0.0))/float(texDimension) );
+            vec4 anchor12 = texture(u_image, (startPos + vec2(13.0, 0.0))/float(texDimension) );
+            vec4 anchor13 = texture(u_image, (startPos + vec2(14.0, 0.0))/float(texDimension) );
+            vec4 anchor14 = texture(u_image, (startPos + vec2(15.0, 0.0))/float(texDimension) );
 
-    float o = zigzag( position.x, .25 ) + zigzag( position.x, .21 );
+            vec3 anchors[15] = vec3[]( vec3((anchor0.x-0.5) * 50.0, anchor0.y * 50.0, (anchor0.z-0.5) * 4.0), 
+                                       vec3((anchor1.x-0.5) * 50.0, anchor1.y * 50.0, (anchor1.z-0.5) * 4.0),
+                                       vec3((anchor2.x-0.5) * 50.0, anchor2.y * 50.0, (anchor2.z-0.5) * 4.0),
+                                       vec3((anchor3.x-0.5) * 50.0, anchor3.y * 50.0, (anchor3.z-0.5) * 4.0),
+                                       vec3((anchor4.x-0.5) * 50.0, anchor4.y * 50.0, (anchor4.z-0.5) * 4.0),
+                                       vec3((anchor5.x-0.5) * 50.0, anchor5.y * 50.0, (anchor5.z-0.5) * 4.0),
+                                       vec3((anchor6.x-0.5) * 50.0, anchor6.y * 50.0, (anchor6.z-0.5) * 4.0),
+                                       vec3((anchor7.x-0.5) * 50.0, anchor7.y * 50.0, (anchor7.z-0.5) * 4.0),
+                                       vec3((anchor8.x-0.5) * 50.0, anchor8.y * 50.0, (anchor8.z-0.5) * 4.0),
+                                       vec3((anchor9.x-0.5) * 50.0, anchor9.y * 50.0, (anchor9.z-0.5) * 4.0),
+                                       vec3((anchor10.x-0.5) * 50.0, anchor10.y * 50.0, (anchor10.z-0.5) * 4.0),
+                                       vec3((anchor11.x-0.5) * 50.0, anchor11.y * 50.0, (anchor11.z-0.5) * 4.0),
+                                       vec3((anchor12.x-0.5) * 50.0, anchor12.y * 50.0, (anchor12.z-0.5) * 4.0),
+                                       vec3((anchor13.x-0.5) * 50.0, anchor13.y * 50.0, (anchor13.z-0.5) * 4.0),
+                                       vec3((anchor14.x-0.5) * 50.0, anchor14.y * 50.0, (anchor14.z-0.5) * 4.0) );
 
-    float radius = .5;
-    float blendFactor = 0.4;
-    dir = vec3( 0., -time * 3., 0. );
+            float radius = .5;
+            float blendFactor = 0.4;
 
-    float s = fract( sin( sin( floor( position.x / 0.01 ) * 2. ) / 0.01 ) * 10. ) * 0.;
+            // head
+            skeleton = smin(skeleton, sphere( position, radius*2.2, (anchors[0] + anchors[1])/2.0 + vec3(0.0, 1.0, 0.0) ), blendFactor);
 
-    // head
-    //vec2 skeleton = line( position, anchors[0] + vec3(0.,1.,0.), anchors[1], .5 );
-    vec2 skeleton = sphere( position, radius * 2.2, (anchors[0] + anchors[1]) / 2.0 + vec3(0.,1.,0.));
+            //blend distance (color blend)
+            float dis0 = skeleton.x;
 
-    //blend distance (color blend)
-    float dis0 = skeleton.x;
+            //left arm
+            skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
+            skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
+            skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
 
-    //left arm
-    skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
-    skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
-    skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
+            //right arm
+            skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
+            skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
+            skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
 
-    //right arm
-    skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
-    skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
-    skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
+            //spine
+            skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
 
-    //spine
-    skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
+            //belly
+            skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
 
-    //belly
-    skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
+            //left leg
+            skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
+            skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
 
-    //left leg
-    skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
-    skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
+            //right leg
+            skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
+            skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
+        }
+    }
 
-    //right leg
-    skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
-    skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
+    
+    // float radius = .5;
+    // float blendFactor = 0.4;
+
+    // // head
+    // vec2 skeleton = sphere( position, radius*2.2, (anchors[0] + anchors[1])/2.0 + vec3(0.0, 1.0, 0.0) );
+
+    // //blend distance (color blend)
+    // float dis0 = skeleton.x;
+
+    // //left arm
+    // skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
+    // skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
+    // skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
+
+    // //right arm
+    // skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
+    // skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
+    // skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
+
+    // //spine
+    // skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
+
+    // //belly
+    // skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
+
+    // //left leg
+    // skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
+    // skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
+
+    // //right leg
+    // skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
+    // skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
+    
 
     vec2 _out = skeleton;
-    _out.y = smoothstep( 0., dis0, _out.x );
+    _out.y = smoothstep( 0., 0.0, _out.x );
     return _out;
 }
 
@@ -327,4 +380,3 @@ void main()
 
 }
 
-*/

@@ -46,14 +46,14 @@ class Renderer
         camera: gl.getUniformLocation(this.crowd_shader_program, 'camera'),
         target: gl.getUniformLocation(this.crowd_shader_program, 'target'),
         time: gl.getUniformLocation(this.crowd_shader_program, 'time'),
-        randomSeed: gl.getUniformLocation(this.crowd_shader_program, 'randomSeed'),
         fov: gl.getUniformLocation(this.crowd_shader_program, 'fov'),
         raymarchMaximumDistance: gl.getUniformLocation(this.crowd_shader_program, 'raymarchMaximumDistance'),
         raymarchPrecision: gl.getUniformLocation(this.crowd_shader_program, 'raymarchPrecision'),
         
-        anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors'),
+        //anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors'),
 
         u_image: gl.getUniformLocation(this.crowd_shader_program, 'u_image'),
+        texDimension: gl.getUniformLocation(this.crowd_shader_program, 'texDimension'),
     };
 
     // variables to be used in program
@@ -143,33 +143,44 @@ class Renderer
     var agentPos = [];
     for (var i = 0; i < 16; i++)
     {
-        agentPos.push(0.0 + 2.0*i);
-        agentPos.push(0.0);
-        agentPos.push(0.0);
+        try { throw i }
+        catch (pos)
+        {
+            agentPos.push(0.0 + 10.0*pos);
+            agentPos.push(0.0);
+            agentPos.push(0.0);
+        }
     }
     gl.uniform3fv(this.tex_uniforms.agentPositions, agentPos);
 
     var agentFwd = [];
     for (var j = 0; j < 16; j++)
     {
-        agentFwd.push(0.0);
-        agentFwd.push(0.0);
-        agentFwd.push(1.0);
+        try { throw j }
+        catch (fwd)
+        {
+            agentFwd.push(0.0);
+            agentFwd.push(0.0);
+            agentFwd.push(1.0);
+        }
     }
     gl.uniform3fv(this.tex_uniforms.agentForwards, agentFwd);
 
     var agentOff = [];
     for (var k = 0; k < 16; k++)
     {
-        agentOff.push(0.0);
+        try { throw k }
+        catch (off)
+        {
+            //agentOff.push(off * 22.5);
+            agentOff.push(0.0);
+        }
     }
     gl.uniform1fv(this.tex_uniforms.agentTimeOffsets, agentOff);
 
     gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
     gl.uniform1i(this.tex_uniforms.texDimension, 16);
     
-
-    //
 
     // draw, 6 vertices because double sided
     gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -183,10 +194,10 @@ class Renderer
     // FOR CROWD SIMULATION MAIN SCENE
 
     // fixes resizing window
-    gl.viewport(0, 0, this.canvas_dimensions[0], this.canvas_dimensions[1]);
+    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
 
     // Now draw the main scene, which is 3D, using the texture.
-    //gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Draw to default framebuffer.
 
 
@@ -214,9 +225,8 @@ class Renderer
     gl.uniformMatrix4fv(this.crowd_uniforms.u_viewProj, false, this.VP);
 
     // for sdf walking
-    gl.uniform2f(this.crowd_uniforms.resolution, this.canvas_dimensions[0], this.canvas_dimensions[1]);
+    gl.uniform2f(this.crowd_uniforms.resolution, canvas.clientWidth, canvas.clientHeight);
     gl.uniform1f(this.crowd_uniforms.time, (Date.now() - this.startTime) * .001);
-    gl.uniform1f(this.crowd_uniforms.randomSeed, Math.random());
     gl.uniform1f(this.crowd_uniforms.fov, camera.fov * Math.PI / 180);
     gl.uniform1f(this.crowd_uniforms.raymarchMaximumDistance, 500);
     gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.001);
@@ -224,7 +234,8 @@ class Renderer
     gl.uniform3f(this.crowd_uniforms.target, 0, 0, 0);
     // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
     // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
-    gl.uniform3fv(this.crowd_uniforms.anchors, this.walker.update());
+    //gl.uniform3fv(this.crowd_uniforms.anchors, this.walker.update());
+    gl.uniform1i(this.crowd_uniforms.texDimension, 16);
 
     // passing agent data texture to crowd shader
     gl.uniform1i(this.crowd_uniforms.u_image, 0);
