@@ -8,6 +8,8 @@ Developers:
 
 ## Current Progress:
 
+[View Presentation](./milestone-3/Milestone3_Presentation.pdf)
+
 ### Issues resolved from last milestone
 
 - gpu.js
