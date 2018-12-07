@@ -157,6 +157,7 @@ void main(void)
         //fragColor = vec4(worldPos.x / 400.0, 0.0, 0.0, 1.0);
         //fragColor = vec4(0.0, worldPos.y / 5000.0, 0.0, 1.0);
         //fragColor = vec4(0.0, 0.0, worldPos.z / 200.0, 1.0);
+        
         fragColor = vec4(worldPos.x / 50.0 + 0.5, worldPos.y / 50.0, worldPos.z / 4.0 + 0.5, 1.0);
     }
 }
