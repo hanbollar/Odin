@@ -30,6 +30,10 @@ void main()
 
 // resources: https://github.com/nicoptere/raymarching-for-THREE
 
+#define JOINT_TEX_SCALE 50.0
+#define AGENT_BOUNDING_HEIGHT 18.0
+#define AGENT_BOUNDING_RAD 7.0
+
 uniform vec2 resolution;
 uniform float time;
 uniform float fov;
@@ -38,8 +42,8 @@ uniform float raymarchPrecision;
 uniform vec3 camera;
 uniform vec3 target;
 uniform sampler2D u_image; 
-uniform int texDimension;
-
+uniform int texDim;
+uniform float worldDim;
 //uniform vec3 anchors[15];
 
 
@@ -130,6 +134,14 @@ vec2 line( vec3 p, vec3 a, vec3 b, float r )
     return vec2( length(pa - ba*h) - r, 1.0 );
 }
 
+// same as line function, just for clarity
+vec2 capsule( vec3 p, vec3 a, vec3 b, float r )
+{
+    vec3 pa = p - a, ba = b - a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return vec2( length( pa - ba*h ) - r, 1.0);
+}
+
 //operations
 
 vec2 unionAB(vec2 a, vec2 b) 
@@ -181,76 +193,89 @@ vec2 field( vec3 position )
 {
     vec2 skeleton = vec2(100000000000.0, 1.0);
 
-    for (int agentY = 0; agentY < 2; agentY++)
+    for (int agentY = 0; agentY < texDim; agentY++)
     {
-        for (int agentX = 0; agentX < texDimension / 16; agentX = agentX + 16)
+        for (int agentX = 0; agentX < texDim / 16; agentX = agentX + 16)
         {
-            vec2 startPos = vec2(float(agentX) + 0.5, float(agentY) + 0.5);
+            vec2 uvStartPos = vec2(float(agentX) + 0.5, float(agentY) + 0.5);
 
-            vec4 anchor0 = texture(u_image, (startPos + vec2(1.0, 0.0))/float(texDimension) );
-            vec4 anchor1 = texture(u_image, (startPos + vec2(2.0, 0.0))/float(texDimension) );
-            vec4 anchor2 = texture(u_image, (startPos + vec2(3.0, 0.0))/float(texDimension) );
-            vec4 anchor3 = texture(u_image, (startPos + vec2(4.0, 0.0))/float(texDimension) );
-            vec4 anchor4 = texture(u_image, (startPos + vec2(5.0, 0.0))/float(texDimension) );
-            vec4 anchor5 = texture(u_image, (startPos + vec2(6.0, 0.0))/float(texDimension) );
-            vec4 anchor6 = texture(u_image, (startPos + vec2(7.0, 0.0))/float(texDimension) );
-            vec4 anchor7 = texture(u_image, (startPos + vec2(8.0, 0.0))/float(texDimension) );
-            vec4 anchor8 = texture(u_image, (startPos + vec2(9.0, 0.0))/float(texDimension) );
-            vec4 anchor9 = texture(u_image, (startPos + vec2(10.0, 0.0))/float(texDimension) );
-            vec4 anchor10 = texture(u_image, (startPos + vec2(11.0, 0.0))/float(texDimension) );
-            vec4 anchor11 = texture(u_image, (startPos + vec2(12.0, 0.0))/float(texDimension) );
-            vec4 anchor12 = texture(u_image, (startPos + vec2(13.0, 0.0))/float(texDimension) );
-            vec4 anchor13 = texture(u_image, (startPos + vec2(14.0, 0.0))/float(texDimension) );
-            vec4 anchor14 = texture(u_image, (startPos + vec2(15.0, 0.0))/float(texDimension) );
+            vec3 agentPos = (texture(u_image, (uvStartPos / float(texDim) )).xyz - vec3(0.5)) * worldDim;
 
-            vec3 anchors[15] = vec3[]( vec3((anchor0.x-0.5) * 50.0, anchor0.y * 50.0, (anchor0.z-0.5) * 4.0), 
-                                       vec3((anchor1.x-0.5) * 50.0, anchor1.y * 50.0, (anchor1.z-0.5) * 4.0),
-                                       vec3((anchor2.x-0.5) * 50.0, anchor2.y * 50.0, (anchor2.z-0.5) * 4.0),
-                                       vec3((anchor3.x-0.5) * 50.0, anchor3.y * 50.0, (anchor3.z-0.5) * 4.0),
-                                       vec3((anchor4.x-0.5) * 50.0, anchor4.y * 50.0, (anchor4.z-0.5) * 4.0),
-                                       vec3((anchor5.x-0.5) * 50.0, anchor5.y * 50.0, (anchor5.z-0.5) * 4.0),
-                                       vec3((anchor6.x-0.5) * 50.0, anchor6.y * 50.0, (anchor6.z-0.5) * 4.0),
-                                       vec3((anchor7.x-0.5) * 50.0, anchor7.y * 50.0, (anchor7.z-0.5) * 4.0),
-                                       vec3((anchor8.x-0.5) * 50.0, anchor8.y * 50.0, (anchor8.z-0.5) * 4.0),
-                                       vec3((anchor9.x-0.5) * 50.0, anchor9.y * 50.0, (anchor9.z-0.5) * 4.0),
-                                       vec3((anchor10.x-0.5) * 50.0, anchor10.y * 50.0, (anchor10.z-0.5) * 4.0),
-                                       vec3((anchor11.x-0.5) * 50.0, anchor11.y * 50.0, (anchor11.z-0.5) * 4.0),
-                                       vec3((anchor12.x-0.5) * 50.0, anchor12.y * 50.0, (anchor12.z-0.5) * 4.0),
-                                       vec3((anchor13.x-0.5) * 50.0, anchor13.y * 50.0, (anchor13.z-0.5) * 4.0),
-                                       vec3((anchor14.x-0.5) * 50.0, anchor14.y * 50.0, (anchor14.z-0.5) * 4.0) );
+            // CAPSULE BOUNDING BOX OPTIMIZATION
+            // skeleton = smin(skeleton, capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD), 0.0);
+            if (capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD).x < AGENT_BOUNDING_RAD)
+            {
+              vec3 anchor0  = texture(u_image, (uvStartPos + vec2( 1.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor1  = texture(u_image, (uvStartPos + vec2( 2.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor2  = texture(u_image, (uvStartPos + vec2( 3.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor3  = texture(u_image, (uvStartPos + vec2( 4.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor4  = texture(u_image, (uvStartPos + vec2( 5.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor5  = texture(u_image, (uvStartPos + vec2( 6.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor6  = texture(u_image, (uvStartPos + vec2( 7.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor7  = texture(u_image, (uvStartPos + vec2( 8.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor8  = texture(u_image, (uvStartPos + vec2( 9.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor9  = texture(u_image, (uvStartPos + vec2(10.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor10 = texture(u_image, (uvStartPos + vec2(11.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor11 = texture(u_image, (uvStartPos + vec2(12.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor12 = texture(u_image, (uvStartPos + vec2(13.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor13 = texture(u_image, (uvStartPos + vec2(14.0, 0.0)) / float(texDim) ).xyz;
+              vec3 anchor14 = texture(u_image, (uvStartPos + vec2(15.0, 0.0)) / float(texDim) ).xyz;
 
-            float radius = .5;
-            float blendFactor = 0.4;
+              vec3 anchors[15] = vec3[]( (anchor0  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor1  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor2  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor3  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor4  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor5  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor6  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor7  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor8  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor9  - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor10 - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor11 - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor12 - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor13 - vec3(0.5)) * JOINT_TEX_SCALE + agentPos,
+                                         (anchor14 - vec3(0.5)) * JOINT_TEX_SCALE + agentPos );
 
-            // head
-            skeleton = smin(skeleton, sphere( position, radius*2.2, (anchors[0] + anchors[1])/2.0 + vec3(0.0, 1.0, 0.0) ), blendFactor);
+              float radius = .5;
+              float blendFactor = 0.4;
 
-            //blend distance (color blend)
-            float dis0 = skeleton.x;
+              // head
+              skeleton = smin(skeleton, sphere( position, radius*2.2, (anchors[0] + anchors[1])/2.0 + vec3(0.0, 1.0, 0.0) ), blendFactor);
 
-            //left arm
-            skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
-            skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
-            skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
+              //blend distance (color blend)
+              float dis0 = skeleton.x;
 
-            //right arm
-            skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
-            skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
-            skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
+              //left arm
+              skeleton = smin( skeleton, line( position, anchors[1], anchors[2], radius ), blendFactor ); //shoulder L
+              skeleton = smin( skeleton, line( position, anchors[2], anchors[3], radius ), blendFactor );
+              skeleton = smin( skeleton, line( position, anchors[3], anchors[4], radius ), blendFactor );
 
-            //spine
-            skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
+              //right arm
+              skeleton = smin( skeleton, line( position, anchors[1], anchors[5], radius ), blendFactor ); //shoulder R
+              skeleton = smin( skeleton, line( position, anchors[5], anchors[6], radius ), blendFactor );
+              skeleton = smin( skeleton, line( position, anchors[6], anchors[7], radius ), blendFactor );
 
-            //belly
-            skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
+              //spine
+              skeleton = smin( skeleton, line( position, anchors[1], anchors[8], radius * 2.5 ), blendFactor );
 
-            //left leg
-            skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
-            skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
+              //belly
+              skeleton = smin( skeleton, sphere( position, radius * 3.5, anchors[8] ), blendFactor );
 
-            //right leg
-            skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
-            skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
+              //left leg
+              skeleton = smin( skeleton, line( position, anchors[9], anchors[10], radius ), blendFactor );
+              skeleton = smin( skeleton, line( position, anchors[10], anchors[11], radius ), blendFactor );
+
+              //right leg
+              skeleton = smin( skeleton, line( position, anchors[12], anchors[13], radius ), blendFactor );
+              skeleton = smin( skeleton, line( position, anchors[13], anchors[14], radius ), blendFactor * 1.5 );
+            }
+            else
+            {
+              // treat agent as a simple capsule if too far away
+              skeleton = smin(skeleton, capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD), 0.0);
+            }
+            
         }
     }
 
@@ -304,7 +329,8 @@ vec3 calcNormal(vec3 pos, float eps)
                     v4 * field( pos + v4*eps ).x );
 }
 
-vec3 calcNormal(vec3 pos) {
+vec3 calcNormal(vec3 pos) 
+{
   return calcNormal(pos, 0.002);
 }
 

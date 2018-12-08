@@ -16,13 +16,15 @@ float happyaxis[230] = float[230](-3.6804, 3.8492, 3.1128, 0.3552, 1.2418, 3.112
 
 
 #define NUM_AGENTS 16
+#define JOINT_TEX_SCALE 50.0
 
 uniform vec3 agentPositions[NUM_AGENTS];
 uniform vec3 agentForwards[NUM_AGENTS];
 
 uniform float agentTimeOffsets[NUM_AGENTS];
 uniform float time;
-uniform int texDimension;
+uniform int texDim;
+uniform float worldDim;
 
 const float PI = 3.14159265359;
 const float speed = 1.0;
@@ -87,7 +89,7 @@ float getMarker(int i, float initphase)
 // https://github.com/mrdoob/three.js/blob/dev/src/math/Quaternion.js
 vec4 quatFromUnitVectors(vec3 vFrom, vec3 vTo)
 {
-    vec3 v1 = vec3(0.0, 0.0, 0.0);
+    vec3 v1 = vec3(0.0);
     float EPS = 0.000001;
     float r = dot( vFrom, vTo ) + 1.0;
 
@@ -112,53 +114,52 @@ vec4 quatFromUnitVectors(vec3 vFrom, vec3 vTo)
     return normalize(quat);
 }
 
+
 // http://www.euclideanspace.com/maths/geometry/rotations/conversions/quaternionToMatrix/index.htm
-mat4 transformationMatrix(vec3 pos, vec4 quat)
+mat4 rotationMatrix(vec4 quat)
 {
     return mat4(1.0 - 2.0*quat.y*quat.y - 2.0*quat.z*quat.z,          2.0*quat.x*quat.y - 2.0*quat.z*quat.w,          2.0*quat.x*quat.z + 2.0*quat.y*quat.w,    0.0,
                       2.0*quat.x*quat.y + 2.0*quat.z*quat.w,    1.0 - 2.0*quat.x*quat.x - 2.0*quat.z*quat.z,          2.0*quat.y*quat.z - 2.0*quat.x*quat.w,    0.0,
                       2.0*quat.x*quat.z - 2.0*quat.y*quat.w,          2.0*quat.y*quat.z - 2.0*quat.x*quat.w,    1.0 - 2.0*quat.x*quat.x - 2.0*quat.y*quat.y,    0.0,
-                                       0.0,                                          0.0,                                          0.0,                          1.0);
+                                       0.0,                                            0.0,                                            0.0,                     1.0);
 }
 
 
 void main(void)
-{
-    // agent position
+{   
+    int agentIndex = int(floor(gl_FragCoord.x / 16.0)) + int(floor(gl_FragCoord.y)) * (texDim / 16);
+
+    // store agent WORLD position
     if (mod(gl_FragCoord.x, 16.0) == 0.5)
     {
-        //fragColor = vec4(0.0, gl_FragCoord.y / float(NUM_AGENTS / (texDimension / 16)), 0.0, 1.0);
-
-        int agentIndex = int(floor(gl_FragCoord.x / 16.0)) + int(floor(gl_FragCoord.y)) * (texDimension / 16);
-        fragColor = vec4(agentPositions[agentIndex].x, agentPositions[agentIndex].y, agentPositions[agentIndex].z, 1.0);
+        fragColor = vec4(agentPositions[agentIndex].x / worldDim + 0.5, 
+                         agentPositions[agentIndex].y / worldDim + 0.5, 
+                         agentPositions[agentIndex].z / worldDim + 0.5, 1.0);
     }
-    // agent joint anchor position
+
+    // store agents LOCAL joint position WITH BODY ROTATION applied
     else
     {
-        int agentIndex = int(floor(gl_FragCoord.x / 16.0)) + int(floor(gl_FragCoord.y)) * (texDimension / 16);
-        int anchorIndex = int( mod(gl_FragCoord.x, 16.0) - 1.5 );
+        int jointIndex = int( mod(gl_FragCoord.x, 16.0) - 1.5 );
 
+        float x = getMarker(jointIndex + 15, agentTimeOffsets[agentIndex]);
+        float y = getMarker(jointIndex + 30, agentTimeOffsets[agentIndex]);
+        float z = getMarker(jointIndex +  0, agentTimeOffsets[agentIndex]);
 
-
-
-        float x = getMarker(anchorIndex + 15, agentTimeOffsets[agentIndex]);
-        float y = getMarker(anchorIndex + 30, agentTimeOffsets[agentIndex]);
-        float z = getMarker(anchorIndex +  0, agentTimeOffsets[agentIndex]);
-        vec4 localPos = vec4(x * 0.01, y * 0.01, z * 0.01, 1.0);
+        // NOTE: WE SCALE BAKED JOINT NUMBERS DOWN BY 0.01
+        vec4 localPos = vec4(0.01 * x, 0.01 * y, 0.01 * z, 1.0);
         vec4 rotationQuaternion = quatFromUnitVectors(vec3(0.0, 0.0, 1.0), agentForwards[agentIndex]);
         
-        vec4 worldPos = vec4(agentPositions[agentIndex].xyz, 1.0) + transformationMatrix(agentPositions[agentIndex], rotationQuaternion) * localPos;
+        //vec4 worldPos = vec4(agentPositions[agentIndex].xyz, 1.0) + rotationMatrix(rotationQuaternion) * localPos;
         
-        //vec4 worldPos = localPos;
-        
-        //fragColor = vec4(worldPos.x / 5000.0, worldPos.y / 5000.0, worldPos.z / 5000.0, 1.0);
-        //fragColor = vec4(0.0, 1.0, 0.0, 1.0);
-        //
-        //fragColor = vec4(worldPos.x / 400.0, 0.0, 0.0, 1.0);
-        //fragColor = vec4(0.0, worldPos.y / 5000.0, 0.0, 1.0);
-        //fragColor = vec4(0.0, 0.0, worldPos.z / 200.0, 1.0);
-        
-        fragColor = vec4(worldPos.x / 50.0 + 0.5, worldPos.y / 50.0, worldPos.z / 4.0 + 0.5, 1.0);
+        vec4 rotPos = rotationMatrix(rotationQuaternion) * localPos;
+
+        //fragColor = vec4(worldPos.x / worldDim + 0.5, worldPos.y / worldDim + 0.5, worldPos.z / worldDim + 0.5, 1.0);
+        //fragColor = vec4(localPos.x / 10.0 + 0.5, 0.0, 0.0, 1.0);
+        //fragColor = vec4(0.0, localPos.y / 40.0 + 0.5, 0.0, 1.0);
+        //fragColor = vec4(0.0, 0.0, localPos.z / 10.0 + 0.5, 1.0);
+
+        fragColor = vec4(rotPos.x / JOINT_TEX_SCALE + 0.5, rotPos.y / JOINT_TEX_SCALE + 0.5, rotPos.z / JOINT_TEX_SCALE + 0.5, 1.0);
     }
 }
 

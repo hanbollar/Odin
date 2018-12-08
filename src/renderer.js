@@ -10,6 +10,13 @@ class Renderer
     this.startTime = Date.now();
     this.walker = new Walker();
 
+    // SET THESE TWO VARIABLES
+    this.worldDimension = 1000.0;
+    this.numAgents = 16 * Math.pow(4, 0); // must be 16 times a power of 4
+
+    this.texDimension = Math.sqrt(this.numAgents * 16);
+
+
     // main shader program
     //
     // crowd_vertex_shader_src, crowd_fragment_shader_src 
@@ -34,7 +41,8 @@ class Renderer
         agentForwards: gl.getUniformLocation(this.tex_shader_program, 'agentForwards'),
         agentTimeOffsets: gl.getUniformLocation(this.tex_shader_program, 'agentTimeOffsets'),
         time: gl.getUniformLocation(this.tex_shader_program, 'time'),
-        texDimension: gl.getUniformLocation(this.tex_shader_program, 'texDimension')
+        texDim: gl.getUniformLocation(this.tex_shader_program, 'texDim'),
+        worldDim: gl.getUniformLocation(this.tex_shader_program, 'worldDim'),
     };
 
     this.crowd_uniforms = 
@@ -53,7 +61,8 @@ class Renderer
         //anchors: gl.getUniformLocation(this.crowd_shader_program, 'anchors'),
 
         u_image: gl.getUniformLocation(this.crowd_shader_program, 'u_image'),
-        texDimension: gl.getUniformLocation(this.crowd_shader_program, 'texDimension'),
+        texDim: gl.getUniformLocation(this.crowd_shader_program, 'texDim'),
+        worldDim: gl.getUniformLocation(this.crowd_shader_program, 'worldDim'),
     };
 
     // variables to be used in program
@@ -92,9 +101,10 @@ class Renderer
 
   drawScene() 
   {
-    gl.viewport(0, 0, 16, 16);
-
+    
     // FOR RENDERING TO TEXTURE
+
+    gl.viewport(0, 0, this.texDimension, this.texDimension);
 
     // insert frame buffer code here
     // for more info on gl framebuffer texture functions:
@@ -106,7 +116,7 @@ class Renderer
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     //gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 16, 16, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.texDimension, this.texDimension, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
 
     var fbo = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
@@ -134,19 +144,15 @@ class Renderer
     gl.enableVertexAttribArray(this.tex_uniforms.v_position);
     gl.vertexAttribPointer(this.tex_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
 
-
-
-
-
     // uniforms
 
     var agentPos = [];
-    for (var i = 0; i < 16; i++)
+    for (var i = 0; i < this.numAgents; i++)
     {
         try { throw i }
         catch (pos)
         {
-            agentPos.push(0.0 + 10.0*pos);
+            agentPos.push(0.0 + 20*pos);
             agentPos.push(0.0);
             agentPos.push(0.0);
         }
@@ -154,7 +160,7 @@ class Renderer
     gl.uniform3fv(this.tex_uniforms.agentPositions, agentPos);
 
     var agentFwd = [];
-    for (var j = 0; j < 16; j++)
+    for (var j = 0; j < this.numAgents; j++)
     {
         try { throw j }
         catch (fwd)
@@ -167,7 +173,7 @@ class Renderer
     gl.uniform3fv(this.tex_uniforms.agentForwards, agentFwd);
 
     var agentOff = [];
-    for (var k = 0; k < 16; k++)
+    for (var k = 0; k < this.numAgents; k++)
     {
         try { throw k }
         catch (off)
@@ -179,10 +185,11 @@ class Renderer
     gl.uniform1fv(this.tex_uniforms.agentTimeOffsets, agentOff);
 
     gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
-    gl.uniform1i(this.tex_uniforms.texDimension, 16);
+    gl.uniform1i(this.tex_uniforms.texDim, this.texDimension);
+    gl.uniform1f(this.tex_uniforms.worldDim, this.worldDimension);
     
 
-    // draw, 6 vertices because double sided
+    // FINALLY, draw, 6 vertices because double sided
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
 
@@ -232,10 +239,14 @@ class Renderer
     gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.001);
     gl.uniform3f(this.crowd_uniforms.camera, camera.position.x, camera.position.y, camera.position.z);
     gl.uniform3f(this.crowd_uniforms.target, 0, 0, 0);
+
     // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
     // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
     //gl.uniform3fv(this.crowd_uniforms.anchors, this.walker.update());
-    gl.uniform1i(this.crowd_uniforms.texDimension, 16);
+
+    gl.uniform1i(this.crowd_uniforms.texDim, this.texDimension);
+    gl.uniform1f(this.crowd_uniforms.worldDim, this.worldDimension);
+    
 
     // passing agent data texture to crowd shader
     gl.uniform1i(this.crowd_uniforms.u_image, 0);
