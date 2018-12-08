@@ -280,29 +280,33 @@ var currTime = 0;
 var voronoi_red;
 makeRenderLoop(
   function() {
-    // begin steps for iteration loop
-    if (iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
-    if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi red');  }
-    // only need one color because hash function we're using has all color channels be the same value.
-    voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-    if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi red, begin green');  }
-    if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi blue, begin render check');  }
-    if (d) {
-      renderCheck(voronoi_red);
-      document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
+    if (params.render_mode == 0) {
+      render.update();
+    } else {
+      // begin steps for iteration loop
+      if (iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
+      if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi red');  }
+      // only need one color because hash function we're using has all color channels be the same value.
+      voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+      if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi red, begin green');  }
+      if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi blue, begin render check');  }
+      if (d) {
+        renderCheck(voronoi_red);
+        document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
+      }
+      if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: rendercheck, begin positionsUpdate kernel check');  }
+      
+      pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
+      if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
+
+      // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
+      // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
+      pos_1 = pos_2;
+
+      if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
+      ++iter;
+
+      // if (iter < iter_limit) { console.log(colorToIndex(1.0/255.0, 255)); console.log('above answer should be: 1');}
     }
-    if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: rendercheck, begin positionsUpdate kernel check');  }
-    
-    pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
-    if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
-
-    // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
-    // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
-    pos_1 = pos_2;
-
-    if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
-    ++iter;
-
-    // if (iter < iter_limit) { console.log(colorToIndex(1.0/255.0, 255)); console.log('above answer should be: 1');}
   }
 )();

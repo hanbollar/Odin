@@ -14,8 +14,8 @@ export function saveCanvas() {
 }
 
 export function initShaderProgram(gl_context, vsSource, fsSource) {
-  const vs = loadShader(gl_context, gl_context.VERTEX_SHADER, vsSource);
-  const fs = loadShader(gl_context, gl_context.FRAGMENT_SHADER, fsSource);
+  const vs = loadShader(gl_context, vsSource, gl_context.VERTEX_SHADER);
+  const fs = loadShader(gl_context, fsSource, gl_context.FRAGMENT_SHADER);
   const program = gl_context.createProgram();
 
   gl_context.attachShader(program, vs);
@@ -29,7 +29,7 @@ export function initShaderProgram(gl_context, vsSource, fsSource) {
   return program;
 }
 
-function loadShader(gl_context, type, src) {
+function loadShader(gl_context, src, type) {
   const shader = gl_context.createShader(type);
   gl_context.shaderSource(shader, src);
   gl_context.compileShader(shader);

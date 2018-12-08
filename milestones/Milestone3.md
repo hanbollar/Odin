@@ -78,4 +78,3 @@ Additionally, we also finally have movement using the texture passes!
 - crowd simulation
 	- although using framebuffer to access agent data in texture, still slow for raymarching signed distance functions.
 	- have to add randomizing character physical traits
-

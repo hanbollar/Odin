@@ -7,7 +7,7 @@ class Scene {
   constructor() {
     this._simStep = 0;
 
-    this.numParticles = 255.0;
+    this.numParticles = 10.0;
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
@@ -49,14 +49,6 @@ class Scene {
         this.particle_targets[i][2] = 0;
       }
     }
-  }
-
-  moveParticlePositions() {
-    // TODO: later port this to be an image texture update
-  }
-
-  update() {
-    // TODO: move gpu calls to here
   }
 }
 
