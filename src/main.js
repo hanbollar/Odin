@@ -269,9 +269,7 @@ makeRenderLoop(
     if (iter < iter_limit) {console.log('iter:' + iter);}
     if (iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi');  }
     colorByVoronoi(pos_1, colors, targets);
-    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi, begin append to document');  }
-    //document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
-    if (iter < iter_limit) {currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: append to document, begin draw to background canvas 2d');  }
+    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi, begin draw to background canvas 2d');  }
     /// convert voronoi from getCanvas to gpu texture
     /// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes so doing the multiple canvases
     // voronoi to canvas 2d
