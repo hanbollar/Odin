@@ -43,14 +43,13 @@ const scene = new Scene();
 **** SHADER HELPER FUNCTIONS ****
 ********************************/
 
-function coneDepth(position, cone_center) {
+function coneDepth(p_x, p_y, cone_x, cone_y) {
     // cone math --> dist to center of cone
     // we have height to radius ratio
     // find height of cone at this radius
     // this is depth to be returned
 
-    var distance = sqrt(  (position[0] - cone_center[0]) * (position[0] - cone_center[0])
-                        + (position[1] - cone_center[1]) * (position[1] - cone_center[1]));
+    var distance = sqrt((p_x - cone_x) * (p_x - cone_x) + (p_y - cone_y) * (p_y - cone_y));
 
     // for this, all cones will have height to radius ratio of h: 2, r: 1. so c = h / r = 2.
     const c = 2.0;
@@ -58,7 +57,7 @@ function coneDepth(position, cone_center) {
     return distance * c;
 }
 const coneDepth_options = {
-  paramTypes: { position: 'Array(2)', cone_center: 'Array(2)' },
+  paramTypes: { p_x: 'Number', p_y: 'Number', cone_x: 'Number', cone_y: 'Number' },
   returnType: 'Number'
 };
 gpu.addFunction(coneDepth, coneDepth_options);
@@ -136,12 +135,14 @@ const colorByVoronoi = gpu.createKernel(function(positions_texture, colors_textu
   var second_closest_index = -1;
 
   // find which depths and vertices this pixel is associated with
+  var depth = 0;
+  var pos_x = 0;
+  var pos_y = 0;
   for (var i = 0; i < this.constants.length; ++i) {
-    const pos_x = positions_texture[0][i] * this.constants.screen_x;
-    const pos_y = positions_texture[1][i] * this.constants.screen_y;
+    pos_x = positions_texture[0][i] * this.constants.screen_x;
+    pos_y = positions_texture[1][i] * this.constants.screen_y;
 
-    var depth = coneDepth(this.vec2(this.thread.x, this.thread.y),
-                          this.vec2(pos_x, pos_y));
+    depth = coneDepth(this.thread.x, this.thread.y, pos_x, pos_y);
 
     if (depth < closest_max_depth) {
       second_closest_max_depth = closest_max_depth;
@@ -266,23 +267,23 @@ makeRenderLoop(
   function() {
     // begin steps for iteration loop
     if (iter < iter_limit) {console.log('iter:' + iter);}
-    if (iter < iter_limit) { console.log('color by voronoi'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi');  }
     colorByVoronoi(pos_1, colors, targets);
-    if (iter < iter_limit) { console.log('end: color by voronoi, begin append to document'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
-    document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
-    if (iter < iter_limit) { console.log('end: append to document, begin draw to background canvas 2d'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi, begin append to document');  }
+    //document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
+    if (iter < iter_limit) {currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: append to document, begin draw to background canvas 2d');  }
     /// convert voronoi from getCanvas to gpu texture
     /// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes so doing the multiple canvases
     // voronoi to canvas 2d
     context2d = draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
-    if (iter < iter_limit) { console.log('end: draw to background canvas 2d, begin: getImageData'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: draw to background canvas 2d, begin: getImageData');  }
     data = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
-    if (iter < iter_limit) { console.log('end: getImageData, begin import texture'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: getImageData, begin import texture');  }
     voronoi_texture = importTexture(data);
-    if (iter < iter_limit) { console.log('end: import texture, begin positions Update superkernel'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { console.log((prevtime - currTime)); prevtime = currTime; console.log( 'end: import texture, begin positions Update superkernel'); currTime = Date.now();  }
 
     pos_2 = positionsUpdate_superKernel(voronoi_texture, pos_1, colors, targets);
-    if (iter < iter_limit) { console.log('end: positions update superkernel'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
+    if (iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
