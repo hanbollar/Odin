@@ -40,9 +40,11 @@ In Progress - More information coming soon.
 #### Build
 ```
 Clone this repository
-Download and install Node.js
-Run `npm install` in the root directory which will download and install dependencies.
-Lastly Run `npm install gpu.js`
+Navigate to your root directory and run the following commands
+`npm install` 
+`npm install gpu.js`
+`npm install -g grunt-cli`
+`npm install grunt --save-dev`
 ```
 
 #### Run
