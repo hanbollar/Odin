@@ -1,12 +1,13 @@
 import { canvas, camera, cameraControls, gui, gl, gpu } from './init';
 import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
 import { initShaderProgram } from './utils';
+import { FLOOR_WIDTH, FLOOR_HEIGHT } from './main';
 
 class Scene {
   constructor() {
     this._simStep = 0;
 
-    this.numParticles = 200;
+    this.numParticles = 255.0;
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
@@ -18,29 +19,34 @@ class Scene {
       this.particle_targets.push(vec3.create());
     }
 
+    var target1_x = 1;
+    var target1_y = 1;
+    var target2_x = FLOOR_WIDTH * 0.75;
+    var target2_y = FLOOR_HEIGHT * 0.75;
+
     // create initial values
     for (var i = 0; i < this.numParticles; ++i) {
-      this.particle_positions[i][0] = Math.random() * canvas.width;
-      this.particle_positions[i][1] = Math.random() * canvas.height;
+      this.particle_positions[i][0] = Math.random() * FLOOR_WIDTH;
+      this.particle_positions[i][1] = Math.random() * FLOOR_HEIGHT;
       this.particle_positions[i][2] = 0;
 
       this.particle_velocities[i][0] = Math.random() * 5;
       this.particle_velocities[i][1] = Math.random() * 5;
       this.particle_velocities[i][2] = 0;
 
-      this.particle_colors[i][0] = Math.random();
-      this.particle_colors[i][1] = Math.random();
-      this.particle_colors[i][2] = Math.random();
+      this.particle_colors[i][0] = i / this.numParticles;
+      this.particle_colors[i][1] = i / this.numParticles;
+      this.particle_colors[i][2] = i / this.numParticles;
 
       // TODO - update targets to be a better value
       if (i % 2 == 0) {
-        this.particle_targets[i][0] = 1;
-        this.particle_targets[i][1] = 1;
-        this.particle_targets[i][2] = 1;
+        this.particle_targets[i][0] = target1_x;
+        this.particle_targets[i][1] = target1_y;
+        this.particle_targets[i][2] = 0;
       } else {
-        this.particle_targets[i][0] = 500;
-        this.particle_targets[i][1] = 500;
-        this.particle_targets[i][2] = 500;
+        this.particle_targets[i][0] = target2_x;
+        this.particle_targets[i][1] = target2_y;
+        this.particle_targets[i][2] = 0;
       }
     }
   }

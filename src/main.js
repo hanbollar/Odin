@@ -7,8 +7,10 @@
 const FLT_MAX = Math.pow(3.402823466, 38);
 const AGENT_VIS_RADIUS = 5;
 const PIXEL_BUFFER_RAD = 0.05;
-const FLOOR_WIDTH = 500;
-const FLOOR_HEIGHT = 500;
+export const FLOOR_WIDTH = 75.0;
+export const FLOOR_HEIGHT = 75.0;
+
+var d = true; // console debug
 
  // import the renderer application
 require('./main');
@@ -85,6 +87,23 @@ const computeMarkerWeight_options = {
 }
 gpu.addFunction(computeMarkerWeight, computeMarkerWeight_options);
 
+function colorToIndex(channel_value, numParticles) {
+  var temp_colorToIndex = channel_value * numParticles;
+  var floor_temp = floor(temp_colorToIndex) - temp_colorToIndex;
+  if (floor_temp < 0) {
+    floor_temp *= -1.0;
+  }
+  if (floor_temp < 1e-5) {
+    return floor(temp_colorToIndex);
+  }
+  return ceil(temp_colorToIndex);
+}
+const colorToIndex_options = {
+  paramTypes: { channel_value: 'Number', numParticles: 'Number'},
+  returnType: 'Number'
+}
+gpu.addFunction(colorToIndex, colorToIndex_options);
+
 /*********************************
 ****** GPU KERNEL METHODS ********
 **********************************/
@@ -101,7 +120,7 @@ const initialPositionsToImage = gpu.createKernel(function(positions) {
 })
 .setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([scene.numParticles, 2])
-// .setOutputToTexture(true);
+//.setOutputToTexture(true);
 
 const initialTargetsToImage = gpu.createKernel(function(targets) {
   // an array of vec2s - created as 2d array is stepped through as
@@ -115,7 +134,7 @@ const initialTargetsToImage = gpu.createKernel(function(targets) {
 })
 .setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([scene.numParticles, 2])
-// .setOutputToTexture(true);
+//.setOutputToTexture(true);
 
 const initialColorsToImage = gpu.createKernel(function(colors) {
   // an array of vec3s - created as 2d array is stepped through as
@@ -127,7 +146,7 @@ const initialColorsToImage = gpu.createKernel(function(colors) {
 })
 .setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([scene.numParticles, 3])
-// .setOutputToTexture(true);
+//.setOutputToTexture(true);
 
 const colorByVoronoi = gpu.createKernel(function(positions_texture, colors_texture, targets_texture, color_index) {
   // note: must always have at least two agents in the scene otherwise this will error.
@@ -176,27 +195,20 @@ const colorByVoronoi = gpu.createKernel(function(positions_texture, colors_textu
 
     return 1;
   } else {
+    // color_index - to allow for different channel outputs; however, hash function atm denotes all color channels for a pixel are the same
     return colors_texture[color_index][closest_index];
-    //this.color(colors_texture[0][closest_index], colors_texture[1][closest_index], 0, 1);
   }
 })
 .setConstants({ length: scene.numParticles, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 
-// var importTexture = gpu.createKernel(function (input) {
-//   return input[((this.constants.screen_y - this.thread.y) * this.constants.screen_x * 4) + (this.thread.x * 4) + this.thread.z] / 255.0;
-// })
-// .setConstants({ screen_x: canvas.clientWidth, screen_y: canvas.clientHeight})
-// .setOutputToTexture(true)
-// .setOutput([canvas.clientWidth, canvas.clientHeight, 4]);
-
-const renderCheck = gpu.createKernel(function(voronoi_red, voronoi_green, voronoi_blue) {
-  this.color(voronoi_red[this.thread.y][this.thread.x], voronoi_green[this.thread.y][this.thread.x], voronoi_blue[this.thread.y][this.thread.x]);
+const renderCheck = gpu.createKernel(function(voronoi_red) {
+  this.color(voronoi_red[this.thread.y][this.thread.x], 0, 0);//voronoi_green[this.thread.y][this.thread.x], voronoi_blue[this.thread.y][this.thread.x]);
 })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 .setGraphical(true);
 
-const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_red, voronoi_green, voronoi_blue, colors, target) {
+const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_red, colors, target) {
   // calc weight for each pixel in relation to old positions
   // already have ^^ this technically through voronoi? need to change though process for voronoi with ids?? maybe with texture output instead
 
@@ -210,8 +222,6 @@ const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_red, vor
   // for each position, check surrounding pixels in agent_vis_radius
   const on_pos_index = which_vec2;
   const on_col_red = colors[on_pos_index];
-  const on_col_green = colors[on_pos_index];
-  const on_col_blue = colors[on_pos_index];
 
   // voronoi texture position values are in 0-1 range.
   // want velocity to also be in this output range.
@@ -234,8 +244,8 @@ const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
 .setOutput([scene.numParticles, 2])
 .setOutputToTexture(true)
 
-const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, velocityUpdate, function(voronoi_red, voronoi_green, voronoi_blue, old_positions, colors, target) {
-  return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_red, voronoi_green, voronoi_blue, colors, target));
+const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, velocityUpdate, function(voronoi_red, old_positions, colors, target) {
+  return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_red, colors, target));
 });
 
 /********************
@@ -268,27 +278,22 @@ var iter_limit = 10;
 var prevtime = 0;
 var currTime = 0;
 var voronoi_red;
-var voronoi_green;
-var voronoi_blue;
-var d = false; // console debug
 makeRenderLoop(
   function() {
     // begin steps for iteration loop
     if (iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
     if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi red');  }
+    // only need one color because hash function we're using has all color channels be the same value.
     voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
     if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi red, begin green');  }
-    voronoi_green = colorByVoronoi(pos_1, colors, targets, 1);
-    if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi green, begin blue');  }
-    voronoi_blue = colorByVoronoi(pos_1, colors, targets, 2);
     if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi blue, begin render check');  }
     if (d) {
-      renderCheck(voronoi_red, voronoi_green, voronoi_blue);
+      renderCheck(voronoi_red);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     }
     if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: rendercheck, begin positionsUpdate kernel check');  }
     
-    pos_2 = positionsUpdate_superKernel(voronoi_red, voronoi_green, voronoi_blue, pos_1, colors, targets);
+    pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
     if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
@@ -297,5 +302,7 @@ makeRenderLoop(
 
     if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
     ++iter;
+
+    if (iter < iter_limit) { console.log(colorToIndex(1.0/255.0, 255)); console.log('above answer should be: 1');}
   }
 )();
