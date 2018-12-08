@@ -198,7 +198,6 @@ vec2 field( vec3 position )
         for (int agentX = 0; agentX < texDim / 16; agentX = agentX + 16)
         {
             vec2 uvStartPos = vec2(float(agentX) + 0.5, float(agentY) + 0.5);
-
             vec3 agentPos = (texture(u_image, (uvStartPos / float(texDim) )).xyz - vec3(0.5)) * worldDim;
 
             // CAPSULE BOUNDING BOX OPTIMIZATION
@@ -241,7 +240,7 @@ vec2 field( vec3 position )
               float blendFactor = 0.4;
 
               // head
-              skeleton = smin(skeleton, sphere( position, radius*2.2, (anchors[0] + anchors[1])/2.0 + vec3(0.0, 1.0, 0.0) ), blendFactor);
+              skeleton = smin(skeleton, sphere( position, radius*2.2, (anchors[0] + anchors[1]) / 2.0 + vec3(0.0, 1.0, 0.0) ), blendFactor);
 
               //blend distance (color blend)
               float dis0 = skeleton.x;
@@ -304,11 +303,11 @@ vec2 raymarching( vec3 rayOrigin, vec3 rayDir, float maxd, float precis ) {
 
         vec2 result = field( rayOrigin + rayDir * dist );
         latest = result.x;
-        dist  += latest;
+        dist += latest;
         type = result.y;
     }
 
-    vec2 res    = vec2(-1.0, -1.0 );
+    vec2 res = vec2(-1.0, -1.0 );
     if (dist < maxd) { res = vec2( dist, type ); }
     return res;
 

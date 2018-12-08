@@ -137,7 +137,7 @@ void main(void)
                          agentPositions[agentIndex].z / worldDim + 0.5, 1.0);
     }
 
-    // store agents LOCAL joint position WITH BODY ROTATION applied
+    // store agent LOCAL JOINT position WITH BODY ROTATION applied
     else
     {
         int jointIndex = int( mod(gl_FragCoord.x, 16.0) - 1.5 );
@@ -151,7 +151,7 @@ void main(void)
         vec4 rotationQuaternion = quatFromUnitVectors(vec3(0.0, 0.0, 1.0), agentForwards[agentIndex]);
         
         //vec4 worldPos = vec4(agentPositions[agentIndex].xyz, 1.0) + rotationMatrix(rotationQuaternion) * localPos;
-        
+
         vec4 rotPos = rotationMatrix(rotationQuaternion) * localPos;
 
         //fragColor = vec4(worldPos.x / worldDim + 0.5, worldPos.y / worldDim + 0.5, worldPos.z / worldDim + 0.5, 1.0);
@@ -159,7 +159,7 @@ void main(void)
         //fragColor = vec4(0.0, localPos.y / 40.0 + 0.5, 0.0, 1.0);
         //fragColor = vec4(0.0, 0.0, localPos.z / 10.0 + 0.5, 1.0);
 
-        fragColor = vec4(rotPos.x / JOINT_TEX_SCALE + 0.5, rotPos.y / JOINT_TEX_SCALE + 0.5, rotPos.z / JOINT_TEX_SCALE + 0.5, 1.0);
+        fragColor = vec4(rotPos.xyz / JOINT_TEX_SCALE + vec3(0.5), 1.0);
     }
 }
 

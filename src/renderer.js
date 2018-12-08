@@ -13,11 +13,14 @@ class Renderer
     // SET THESE TWO VARIABLES
     this.worldDimension = 1000.0;
     this.numAgents = 16 * Math.pow(4, 0); // must be 16 times a power of 4
-
+    // TEX DIMENSION SET AUTOMATICALLY
     this.texDimension = Math.sqrt(this.numAgents * 16);
 
+    this.agentPos = [];
+    this.agentFwd = [];
+    this.agentOff = [];
 
-    // main shader program
+    // SHADER PROGRAMS
     //
     // crowd_vertex_shader_src, crowd_fragment_shader_src 
     // are from shaders.js built by GRUNT, look at Gruntfile.js
@@ -77,7 +80,6 @@ class Renderer
     this.projectionMatrix = mat4.create();
     this.VP = mat4.create();
     this.canvas_dimensions = vec2.create();
-
   }
 
 
@@ -98,6 +100,32 @@ class Renderer
     this.drawScene();
   }
 
+  // positions is an array of vec3
+  // forwards is an array of vec3
+  // offsets is an array of floats
+  updateAgents(positions, forwards, offsets)
+  {
+    this.agentPos = [];
+    this.agentFwd = [];
+    this.agentOff = [];
+
+    for (var i = 0; i < positions.length; i++)
+    {
+        try { throw i }
+        catch (agent)
+        {
+            agentPos.push(positions[agent].x);
+            agentPos.push(positions[agent].y);
+            agentPos.push(positions[agent].z);
+
+            agentFwd.push(forwards[agent].x);
+            agentFwd.push(forwards[agent].y);
+            agentFwd.push(forwards[agent].z);
+
+            agentOff.push(offsets[agent]);
+        }
+    }
+  }
 
   drawScene() 
   {
@@ -146,6 +174,7 @@ class Renderer
 
     // uniforms
 
+    /*
     var agentPos = [];
     for (var i = 0; i < this.numAgents; i++)
     {
@@ -178,11 +207,17 @@ class Renderer
         try { throw k }
         catch (off)
         {
-            //agentOff.push(off * 22.5);
-            agentOff.push(0.0);
+            agentOff.push(off * 90);
+            //agentOff.push(0.0);
         }
     }
     gl.uniform1fv(this.tex_uniforms.agentTimeOffsets, agentOff);
+    */
+
+    gl.uniform3fv(this.tex_uniforms.agentPositions, this.agentPos);
+    gl.uniform3fv(this.tex_uniforms.agentForwards, this.agentFwd);
+    gl.uniform1fv(this.tex_uniforms.agentTimeOffsets, this.agentOff);
+    
 
     gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
     gl.uniform1i(this.tex_uniforms.texDim, this.texDimension);
