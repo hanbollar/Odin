@@ -242,7 +242,7 @@ const positionsUpdate_superKernel = gpu.combineKernels(velocityUpdate, positions
 ****** INIT SETUP ********
 **************************/
 
-var canvas2d = document.getElementById('canvas2d');
+var canvas2d = document.getElementById('canvas2d', {preserveDrawingBuffer: true});
 var context2d = canvas2d.getContext('2d');
 canvas2d = resizeSpecificCanvas(canvas2d);
 
@@ -258,22 +258,36 @@ var colors = initialColorsToImage(scene.particle_colors);
 ****** RUN ********
 **************************/
 
+var iter = 0;
+var iter_limit = 10;
+var prevtime = 0;
+var currTime = 0;
 makeRenderLoop(
   function() {
     // begin steps for iteration loop
+    if (iter < iter_limit) {console.log('iter:' + iter);}
+    if (iter < iter_limit) { console.log('color by voronoi'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
     colorByVoronoi(pos_1, colors, targets);
+    if (iter < iter_limit) { console.log('end: color by voronoi, begin append to document'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
     document.getElementsByTagName('body')[0].appendChild(colorByVoronoi.getCanvas());
+    if (iter < iter_limit) { console.log('end: append to document, begin draw to background canvas 2d'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
     /// convert voronoi from getCanvas to gpu texture
     /// there is the outputToTexture(true) flag but for this case, optimized for debugging purposes so doing the multiple canvases
     // voronoi to canvas 2d
     context2d = draw2dImage(colorByVoronoi.getCanvas(), context2d, colorByVoronoi.getCanvas().toDataURL());
+    if (iter < iter_limit) { console.log('end: draw to background canvas 2d, begin: getImageData'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
     data = context2d.getImageData(0, 0, canvas2d.clientWidth, canvas2d.clientHeight).data;
+    if (iter < iter_limit) { console.log('end: getImageData, begin import texture'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
     voronoi_texture = importTexture(data);
+    if (iter < iter_limit) { console.log('end: import texture, begin positions Update superkernel'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
 
     pos_2 = positionsUpdate_superKernel(voronoi_texture, pos_1, colors, targets);
+    if (iter < iter_limit) { console.log('end: positions update superkernel'); currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; }
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
     pos_1 = pos_2;
+
+    ++iter;
   }
 )();
