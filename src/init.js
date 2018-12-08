@@ -41,11 +41,15 @@ gui.add(params, 'render_mode', 0, 4).step(1).onChange(function(newVal) {
     params.render_mode = newVal;
 });
 
+// back canvas for gpu setup and texture passing so visual and texture vals dont conflict
+var back_canvas = document.getElementById('back-canvas');
+const back_canvas_context = canvas.getContext('webgl2');
+
 // GPU setup
 const GPU = require('gpu.js');
 export const gpu = new GPU({
-    canvas: canvas,
-    webgl: gl,
+    canvas: back_canvas,
+    webgl: back_canvas_context,
     mode: gpu
 });
 
