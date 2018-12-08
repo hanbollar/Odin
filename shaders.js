@@ -158,7 +158,7 @@ var crowd_fragment_shader_src = [
 '            vec3 agentPos = (texture(u_image, (uvStartPos / float(texDim) )).xyz - vec3(0.5)) * worldDim;',
 '            // CAPSULE BOUNDING BOX OPTIMIZATION',
 '            // skeleton = smin(skeleton, capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD), 0.0);',
-'            if (capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD).x < 0.1*AGENT_BOUNDING_RAD)',
+'            if (capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD).x < AGENT_BOUNDING_RAD)',
 '            {',
 '              vec3 anchor0  = texture(u_image, (uvStartPos + vec2( 1.0, 0.0)) / float(texDim) ).xyz;',
 '              vec3 anchor1  = texture(u_image, (uvStartPos + vec2( 2.0, 0.0)) / float(texDim) ).xyz;',
