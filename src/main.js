@@ -303,6 +303,6 @@ makeRenderLoop(
     if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
     ++iter;
 
-    if (iter < iter_limit) { console.log(colorToIndex(1.0/255.0, 255)); console.log('above answer should be: 1');}
+    // if (iter < iter_limit) { console.log(colorToIndex(1.0/255.0, 255)); console.log('above answer should be: 1');}
   }
 )();
