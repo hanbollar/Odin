@@ -7,8 +7,8 @@
 const FLT_MAX = Math.pow(3.402823466, 38);
 const AGENT_VIS_RADIUS = 5;
 const PIXEL_BUFFER_RAD = 0.05;
-export const FLOOR_WIDTH = 30.0;
-export const FLOOR_HEIGHT = 30.0;
+export const FLOOR_WIDTH = 100.0;
+export const FLOOR_HEIGHT = 100.0;
 
 var d = DEBUG; // console debug
 
@@ -108,7 +108,7 @@ gpu.addFunction(colorToIndex, colorToIndex_options);
 ****** GPU KERNEL METHODS ********
 **********************************/
 
-const initialPositionsToImage = gpu.createKernel(function(positions) {
+const initialVec3toVec2KernelPassing = gpu.createKernel(function(input_array) {
   // an array of vec2s - created as 2d array is stepped through as
   // [width][height] s.t. [this.thread.y][this.thread.x]
   const vec2_element = this.thread.y;
@@ -116,21 +116,7 @@ const initialPositionsToImage = gpu.createKernel(function(positions) {
 
   // if on y element, divide by height : divide by width
   const div_factor = (1 - vec2_element) * this.constants.screen_x + vec2_element * this.constants.screen_y;
-  return positions[which_vec2][vec2_element] / div_factor;
-})
-.setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
-.setOutput([scene.numParticles, 2])
-//.setOutputToTexture(true);
-
-const initialTargetsToImage = gpu.createKernel(function(targets) {
-  // an array of vec2s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  const vec2_element = this.thread.x;
-  const which_vec2 = this.thread.y;
-
-  // if on y element, divide by height : divide by width
-  const div_factor = (1 - vec2_element) * this.constants.screen_x + vec2_element * this.constants.screen_y;
-  return targets[which_vec2][vec2_element] / div_factor;
+  return input_array[which_vec2][vec2_element] / div_factor;
 })
 .setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([scene.numParticles, 2])
@@ -230,7 +216,6 @@ const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_red, col
 })
 .setConstants({ length: scene.numParticles, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([scene.numParticles, 2])
-//.setOutputToTexture(true);
 
 const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
   // an array of vec2s - created as 2d array is stepped through as
@@ -241,12 +226,27 @@ const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
   // new p = old p + velo
   return old_positions[which_vec2][vec2_element] + velocities[which_vec2][vec2_element];
 })
-.setOutput([scene.numParticles, 2])
-.setOutputToTexture(true)
+.setConstants({ length: scene.numParticles })
+.setOutput([scene.numParticles, 2]);
 
 const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, velocityUpdate, function(voronoi_red, old_positions, colors, target) {
   return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_red, colors, target));
 });
+
+const positionsToViableArray = gpu.createKernel(function(positions_2elements) {
+  // positions_2elements is an array of vec2s - created as 2d array is stepped through as
+  // [width][height] s.t. [this.thread.y][this.thread.x]
+  // our output here is an array of the form [x, 0, z, x, 0, z, ...]
+
+  const which_vec3 = floor(this.thread.x / 3.0);
+  var vec3_element = this.thread.x % 3; 
+
+  if (vec3_element == 1) { return 0; }
+  if (vec3_element == 2) { vec3_element -= 1; }
+  return old_positions[which_vec3][vec3_element];
+})
+.setConstants({ length: scene.numParticles })
+.setOutput([scene.numParticles * 3]);
 
 /********************
 *
@@ -261,27 +261,21 @@ const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, velocity
 ****** INIT SETUP ********
 **************************/
 
-var pos_1 = initialPositionsToImage(scene.particle_positions);
+var pos_1 = initialVec3toVec2KernelPassing(scene.particle_positions);
 var pos_2;
-var data;
-var voronoi_texture;
-var targets = initialTargetsToImage(scene.particle_targets);
+var targets = initialVec3toVec2KernelPassing(scene.particle_targets);
 var colors = initialColorsToImage(scene.particle_colors);
-
-
-/*************************
-****** RUN ********
-**************************/
-
-// init
-
 var iter = 0;
 var iter_limit = 10;
 var prevtime = 0;
 var currTime = 0;
 var voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+var outputToRender_pos1 = [scene.numParticles * 3];
+var outputToRender_pos2 = [scene.numParticles * 3];
 
-// run
+/*************************
+****** RUN ********
+**************************/
 
 function gpuUpdate(render_mode) {
   // begin steps for iteration loop
@@ -296,13 +290,19 @@ function gpuUpdate(render_mode) {
     document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
   }
   if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: rendercheck, begin positionsUpdate kernel check');  }
-  
   pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
   if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
+
+  outputToRender_pos2 = positionsToViableArray(pos_2);
+  // send stuff to webgl2 pipeline
+  // if (not on first frame... then render...)
+  // render...(outputToRender_pos1, outputToRender_pos2);
+
 
   // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
   // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
   pos_1 = pos_2;
+  outputToRender_pos1 = outputToRender_pos2;
 
   if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
   ++iter;

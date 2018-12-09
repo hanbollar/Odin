@@ -7,7 +7,7 @@ class Scene {
   constructor() {
     this._simStep = 0;
 
-    this.numParticles = 10.0;
+    this.numParticles = 100.0;
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
@@ -30,8 +30,10 @@ class Scene {
       this.particle_positions[i][1] = Math.random() * FLOOR_HEIGHT;
       this.particle_positions[i][2] = 0;
 
-      this.particle_velocities[i][0] = Math.random() * 5;
-      this.particle_velocities[i][1] = Math.random() * 5;
+      // for biocrowds doesnt matter what init velo is for update since just depends on
+      // available markers around current location.
+      this.particle_velocities[i][0] = 0;
+      this.particle_velocities[i][1] = 0;
       this.particle_velocities[i][2] = 0;
 
       this.particle_colors[i][0] = i / this.numParticles;
