@@ -1,28 +1,35 @@
- import { makeRenderLoop, camera, cameraControls, gui, gl, gpu, canvas, params, DEBUG } from './init';
- import Renderer from './renderer'
- import { mat4, vec4, vec2 } from 'gl-matrix';
- import { draw2dImage, resizeSpecificCanvas} from './utils'
- import Scene from './scene';
+import Renderer from './renderer'
+import Scene from './scene';
+import {
+  camera, 
+  cameraControls,
+  canvas,
+  DEBUG,
+  gui,
+  gl,
+  gpu,
+  makeRenderLoop,
+  params
+} from './init';
+import {
+  colorByVoronoi,
+  initialVec3toVec2KernelPassing,
+  initialColorsToImage,
+  positionsUpdate,
+  positionsUpdate_superKernel,
+  positionsToViableArray,
+  renderCheck,
+  velocityUpdate
+} from './kernelFunctions';
+import {
+  FLOOR_HEIGHT,
+  FLOOR_WIDTH,
+  NUM_PARTICLES
+} from './utils';
 
-const FLT_MAX = Math.pow(3.402823466, 38);
-const AGENT_VIS_RADIUS = 5;
-const PIXEL_BUFFER_RAD = 0.05;
-export const FLOOR_WIDTH = 100.0;
-export const FLOOR_HEIGHT = 100.0;
-
-var d = DEBUG; // console debug
-
- // import the renderer application
-require('./main');
-
-
-/*********************
-*
-*
-*    SCENE SETUP
-*
-*
-**********************/ 
+/*************************
+****** INIT SETUP ********
+**************************/
 
 // create renderer
 var render = new Renderer();
@@ -33,234 +40,6 @@ cameraControls.target.set(0, 0, 0);
 
 const scene = new Scene();
 
-
-/*********************************
-*
-*
-*    GPU PIPELINE FOR UPDATES
-*
-*
-**********************************/ 
-
-
-/********************************
-**** SHADER HELPER FUNCTIONS ****
-********************************/
-
-function coneDepth(p_x, p_y, cone_x, cone_y) {
-    // cone math --> dist to center of cone
-    // we have height to radius ratio
-    // find height of cone at this radius
-    // this is depth to be returned
-
-    var distance = sqrt((p_x - cone_x) * (p_x - cone_x) + (p_y - cone_y) * (p_y - cone_y));
-
-    // for this, all cones will have height to radius ratio of h: 2, r: 1. so c = h / r = 2.
-    const c = 2.0;
-
-    return distance * c;
-}
-const coneDepth_options = {
-  paramTypes: { p_x: 'Number', p_y: 'Number', cone_x: 'Number', cone_y: 'Number' },
-  returnType: 'Number'
-};
-gpu.addFunction(coneDepth, coneDepth_options);
-
-function computeMarkerWeight(agent_x, agent_y, marker_x, marker_y, target_x, target_y) {
-  var agent_to_marker_x = agent_x - marker_x;
-  var agent_to_marker_y = agent_y - marker_y;
-
-  var agent_to_target_x = agent_x - target_x;
-  var agent_to_target_y = agent_y - target_y;
-
-  var m_distance = sqrt( agent_to_marker_x * agent_to_marker_x + agent_to_marker_y * agent_to_marker_y);
-  var g_distance = sqrt( agent_to_target_x * agent_to_target_x + agent_to_target_y * agent_to_target_y);
-
-  // cos_theta = a dot b / (len(a) * len(b))
-  var cos_theta = (agent_to_marker_x * agent_to_target_x + agent_to_marker_y * agent_to_target_y) / (m_distance * g_distance)
-
-  return (1 + cos_theta) / (1 + m_distance);
-}
-const computeMarkerWeight_options = {
-  paramTypes: { agent_x: 'Number', agent_y: 'Number', marker_x: 'Number', marker_y: 'Number', target_x: 'Number', target_y: 'Number'},
-  returnType: 'Number'
-}
-gpu.addFunction(computeMarkerWeight, computeMarkerWeight_options);
-
-function colorToIndex(channel_value, numParticles) {
-  var temp_colorToIndex = channel_value * numParticles;
-  var floor_temp = floor(temp_colorToIndex) - temp_colorToIndex;
-  if (floor_temp < 0) {
-    floor_temp *= -1.0;
-  }
-  if (floor_temp < 1e-5) {
-    return floor(temp_colorToIndex);
-  }
-  return ceil(temp_colorToIndex);
-}
-const colorToIndex_options = {
-  paramTypes: { channel_value: 'Number', numParticles: 'Number'},
-  returnType: 'Number'
-}
-gpu.addFunction(colorToIndex, colorToIndex_options);
-
-/*********************************
-****** GPU KERNEL METHODS ********
-**********************************/
-
-const initialVec3toVec2KernelPassing = gpu.createKernel(function(input_array) {
-  // an array of vec2s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  const vec2_element = this.thread.y;
-  const which_vec2 = this.thread.x;
-
-  // if on y element, divide by height : divide by width
-  const div_factor = (1 - vec2_element) * this.constants.screen_x + vec2_element * this.constants.screen_y;
-  return input_array[which_vec2][vec2_element] / div_factor;
-})
-.setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
-.setOutput([scene.numParticles, 2])
-//.setOutputToTexture(true);
-
-const initialColorsToImage = gpu.createKernel(function(colors) {
-  // an array of vec3s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  const vec3_element = this.thread.x;
-  const which_vec3 = this.thread.y;
-
-  return colors[which_vec3][vec3_element];
-})
-.setConstants({ screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
-.setOutput([scene.numParticles, 3])
-//.setOutputToTexture(true);
-
-const colorByVoronoi = gpu.createKernel(function(positions_texture, colors_texture, targets_texture, color_index) {
-  // note: must always have at least two agents in the scene otherwise this will error.
-  var closest_max_depth = this.constants.flt_max;
-  var closest_index = -1;
-  var second_closest_max_depth = this.constants.flt_max;
-  var second_closest_index = -1;
-
-  // find which depths and vertices this pixel is associated with
-  var depth = 0;
-  var pos_x = 0;
-  var pos_y = 0;
-  for (var i = 0; i < this.constants.length; ++i) {
-    pos_x = positions_texture[0][i] * this.constants.screen_x;
-    pos_y = positions_texture[1][i] * this.constants.screen_y;
-
-    depth = coneDepth(this.thread.x, this.thread.y, pos_x, pos_y);
-
-    if (depth < closest_max_depth) {
-      second_closest_max_depth = closest_max_depth;
-      closest_max_depth = depth;
-      second_closest_index = closest_index;
-      closest_index = i;
-    } else if (depth < second_closest_max_depth) {
-      second_closest_max_depth = depth;
-      second_closest_index = i;
-    }
-  }
-
-  // color based on distances
-  var closest_x_diff = abs(this.thread.x - positions_texture[0][closest_index] * this.constants.screen_x);
-  var closest_y_diff = abs(this.thread.y - positions_texture[1][closest_index] * this.constants.screen_y);
-  var second_closest_x_diff = abs(this.thread.x - positions_texture[0][second_closest_index] * this.constants.screen_x);
-  var second_closest_y_diff = abs(this.thread.y - positions_texture[1][second_closest_index] * this.constants.screen_y);
-
-  var closest_dist2 = closest_x_diff * closest_x_diff + closest_y_diff * closest_y_diff;
-  var second_closest_dist2 = second_closest_x_diff * second_closest_x_diff + second_closest_y_diff * second_closest_y_diff;
-
-  var dist = closest_dist2 + second_closest_dist2;
-
-  if (abs(closest_dist2 / dist - 0.5) < this.constants.pixel_rad) {
-    // for each pixel, if there are at least two different colors within a particular distance to it, color white
-    // so that we have a buffer distance.
-    // white bc color choice for particle is done through Math.random which ranges from [0, 1)
-    // so will never actually create white allowing it to act as a flag.
-
-    return 1;
-  } else {
-    // color_index - to allow for different channel outputs; however, hash function atm denotes all color channels for a pixel are the same
-    return colors_texture[color_index][closest_index];
-  }
-})
-.setConstants({ length: scene.numParticles, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
-.setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
-
-const renderCheck = gpu.createKernel(function(voronoi_red) {
-  this.color(voronoi_red[this.thread.y][this.thread.x], 0, 0);//voronoi_green[this.thread.y][this.thread.x], voronoi_blue[this.thread.y][this.thread.x]);
-})
-.setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
-.setGraphical(true);
-
-const velocityUpdate = gpu.createKernel(function(old_positions, voronoi_red, colors, target) {
-  // calc weight for each pixel in relation to old positions
-  // already have ^^ this technically through voronoi? need to change though process for voronoi with ids?? maybe with texture output instead
-
-  // follow v = sum of vi's where each vi is the mi distance * weight of mi in relation to target / ave 
-  
-  // an array of vec2s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  const vec2_element = this.thread.x;
-  const which_vec2 = this.thread.y;
-
-  // for each position, check surrounding pixels in agent_vis_radius
-  const on_pos_index = which_vec2;
-  const on_col_red = colors[on_pos_index];
-
-  // voronoi texture position values are in 0-1 range.
-  // want velocity to also be in this output range.
-
-  return 0.01; // zero velocity for now just checking pipeline update
-})
-.setConstants({ length: scene.numParticles, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
-.setOutput([scene.numParticles, 2])
-
-const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
-  // an array of vec2s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  const vec2_element = this.thread.x;
-  const which_vec2 = this.thread.y;
-
-  // new p = old p + velo
-  return old_positions[which_vec2][vec2_element] + velocities[which_vec2][vec2_element];
-})
-.setConstants({ length: scene.numParticles })
-.setOutput([scene.numParticles, 2]);
-
-const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, velocityUpdate, function(voronoi_red, old_positions, colors, target) {
-  return positionsUpdate(old_positions, velocityUpdate(old_positions, voronoi_red, colors, target));
-});
-
-const positionsToViableArray = gpu.createKernel(function(positions_2elements) {
-  // positions_2elements is an array of vec2s - created as 2d array is stepped through as
-  // [width][height] s.t. [this.thread.y][this.thread.x]
-  // our output here is an array of the form [x, 0, z, x, 0, z, ...]
-
-  const which_vec3 = floor(this.thread.x / 3.0);
-  var vec3_element = this.thread.x % 3; 
-
-  if (vec3_element == 1) { return 0; }
-  if (vec3_element == 2) { vec3_element -= 1; }
-  return positions_2elements[which_vec3][vec3_element];
-})
-.setConstants({ length: scene.numParticles })
-.setOutput([scene.numParticles * 3]);
-
-/********************
-*
-*
-*    RUN THE SIM
-*
-*
-*********************/
-
-
-/*************************
-****** INIT SETUP ********
-**************************/
-
 var pos_1 = initialVec3toVec2KernelPassing(scene.particle_positions);
 var pos_2;
 var targets = initialVec3toVec2KernelPassing(scene.particle_targets);
@@ -270,33 +49,37 @@ var iter_limit = 10;
 var prevtime = 0;
 var currTime = 0;
 var voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-var outputToRender_pos1 = [scene.numParticles * 3];
-var outputToRender_pos2 = [scene.numParticles * 3];
+var outputToRender_pos1 = [NUM_PARTICLES * 3];
+var outputToRender_pos2 = [NUM_PARTICLES * 3];
+
 
 /*************************
-****** RUN ********
+********** RUN ***********
 **************************/
 
 makeRenderLoop(
   function() {
-    if (d && iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
-    if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('render update');  }
+    console.log('here1');
+    if (DEBUG && iter < iter_limit) { currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
+    if (DEBUG && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('render update');  }
 
     // only need one color because hash function we're using has all color channels be the same value.
+    console.log('here2');
     voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-    if (d && params.render_mode == 1) {
+    console.log('here3');
+    if (DEBUG && params.render_mode == 1) {
       renderCheck(voronoi_red);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     }
     pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
 
-    if (!d || params.render_mode != 1) {
+    if (!DEBUG || params.render_mode != 1) {
       outputToRender_pos2 = positionsToViableArray(pos_2);
 
       // send stuff to webgl2 pipeline
       // if (not on first frame... then render...)
       // render...(outputToRender_pos1, outputToRender_pos2);
-      render.update();
+      //render.update();
     }
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
@@ -304,6 +87,6 @@ makeRenderLoop(
     pos_1 = pos_2;
     outputToRender_pos1 = outputToRender_pos2;
 
-    if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('end: render update');  }
+    if (DEBUG && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('end: render update');  }
   }
 )();

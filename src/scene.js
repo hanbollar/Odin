@@ -1,18 +1,21 @@
 import { canvas, camera, cameraControls, gui, gl, gpu } from './init';
 import { mat4, vec4, vec3, vec2 } from 'gl-matrix';
-import { initShaderProgram } from './utils';
-import { FLOOR_WIDTH, FLOOR_HEIGHT } from './main';
+import {
+  FLOOR_HEIGHT,
+  FLOOR_WIDTH,
+  initShaderProgram,
+  NUM_PARTICLES
+} from './utils';
 
 class Scene {
   constructor() {
     this._simStep = 0;
 
-    this.numParticles = 100.0;
     this.particle_positions = [];
     this.particle_velocities = [];
     this.particle_colors = [];
     this.particle_targets = [];
-    for (var i = 0; i < this.numParticles; ++i) {
+    for (var i = 0; i < NUM_PARTICLES; ++i) {
       this.particle_positions.push(vec3.create());
       this.particle_velocities.push(vec3.create());
       this.particle_colors.push(vec3.create());
@@ -25,7 +28,7 @@ class Scene {
     var target2_y = FLOOR_HEIGHT * 0.75;
 
     // create initial values
-    for (var i = 0; i < this.numParticles; ++i) {
+    for (var i = 0; i < NUM_PARTICLES; ++i) {
       this.particle_positions[i][0] = Math.random() * FLOOR_WIDTH;
       this.particle_positions[i][1] = Math.random() * FLOOR_HEIGHT;
       this.particle_positions[i][2] = 0;
@@ -36,9 +39,9 @@ class Scene {
       this.particle_velocities[i][1] = 0;
       this.particle_velocities[i][2] = 0;
 
-      this.particle_colors[i][0] = i / this.numParticles;
-      this.particle_colors[i][1] = i / this.numParticles;
-      this.particle_colors[i][2] = i / this.numParticles;
+      this.particle_colors[i][0] = i / NUM_PARTICLES;
+      this.particle_colors[i][1] = i / NUM_PARTICLES;
+      this.particle_colors[i][2] = i / NUM_PARTICLES;
 
       // TODO - update targets to be a better value
       if (i % 2 == 0) {
