@@ -243,7 +243,7 @@ const positionsToViableArray = gpu.createKernel(function(positions_2elements) {
 
   if (vec3_element == 1) { return 0; }
   if (vec3_element == 2) { vec3_element -= 1; }
-  return old_positions[which_vec3][vec3_element];
+  return positions_2elements[which_vec3][vec3_element];
 })
 .setConstants({ length: scene.numParticles })
 .setOutput([scene.numParticles * 3]);
@@ -277,45 +277,33 @@ var outputToRender_pos2 = [scene.numParticles * 3];
 ****** RUN ********
 **************************/
 
-function gpuUpdate(render_mode) {
-  // begin steps for iteration loop
-  if (iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
-  if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('color by voronoi red');  }
-  // only need one color because hash function we're using has all color channels be the same value.
-  voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-  if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi red, begin green');  }
-  if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: color by voronoi blue, begin render check');  }
-  if (d && render_mode == 1) {
-    renderCheck(voronoi_red);
-    document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
-  }
-  if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime; console.log('end: rendercheck, begin positionsUpdate kernel check');  }
-  pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
-  if (d && iter < iter_limit) { currTime = Date.now(); console.log((prevtime - currTime)); prevtime = currTime;  console.log('end: positions update superkernel'); }
-
-  outputToRender_pos2 = positionsToViableArray(pos_2);
-  // send stuff to webgl2 pipeline
-  // if (not on first frame... then render...)
-  // render...(outputToRender_pos1, outputToRender_pos2);
-
-
-  // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
-  // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
-  pos_1 = pos_2;
-  outputToRender_pos1 = outputToRender_pos2;
-
-  if (iter < iter_limit) {currTime = Date.now(); prevtime = currTime; console.log(prevtime - currTime); console.log('just finished duration of iter:' + iter);}
-  ++iter;
-}
-
 makeRenderLoop(
   function() {
-    if (iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
+    if (d && iter < iter_limit) {currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
     if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('render update');  }
-    gpuUpdate(params.render_mode);
-    if (params.render_mode != 1) {
-      //render.update();
+
+    // only need one color because hash function we're using has all color channels be the same value.
+    voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+    if (d && params.render_mode == 1) {
+      renderCheck(voronoi_red);
+      document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     }
+    pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
+
+    if (!d || params.render_mode != 1) {
+      outputToRender_pos2 = positionsToViableArray(pos_2);
+
+      // send stuff to webgl2 pipeline
+      // if (not on first frame... then render...)
+      // render...(outputToRender_pos1, outputToRender_pos2);
+      render.update();
+    }
+
+    // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
+    // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
+    pos_1 = pos_2;
+    outputToRender_pos1 = outputToRender_pos2;
+
     if (d && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('end: render update');  }
   }
 )();
