@@ -13,6 +13,7 @@ import {
 } from './init';
 import {
   colorByVoronoi,
+  colorByVoronoiWeighting,
   initialVec3toVec2KernelPassing,
   initialColorsToImage,
   positionsUpdate,
@@ -49,6 +50,7 @@ var iter_limit = 10;
 var prevtime = 0;
 var currTime = 0;
 var voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+var voronoi_weighting_green = colorByVoronoiWeighting(pos_1, voronoi_red, colors, targets);
 var outputToRender_pos1 = [NUM_PARTICLES * 3];
 var outputToRender_pos2 = [NUM_PARTICLES * 3];
 
@@ -59,16 +61,17 @@ var outputToRender_pos2 = [NUM_PARTICLES * 3];
 
 makeRenderLoop(
   function() {
-    console.log('here1');
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('render update');  }
 
     // only need one color because hash function we're using has all color channels be the same value.
-    console.log('here2');
     voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-    console.log('here3');
+    voronoi_weighting_green = colorByVoronoiWeighting(pos_1, voronoi_red, colors, targets);
     if (DEBUG && params.render_mode == 1) {
-      renderCheck(voronoi_red);
+      renderCheck(voronoi_red, 0);
+      document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
+    } else if (DEBUG && params.render_mode == 2) {
+      renderCheck(voronoi_weighting_green, 1);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     }
     pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);

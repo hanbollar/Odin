@@ -7,14 +7,6 @@ const FLT_MAX = Math.pow(3.402823466, 38);
 const AGENT_VIS_RADIUS = 5;
 const PIXEL_BUFFER_RAD = 0.05;
 
-/*********************************
-*
-*
-*    GPU PIPELINE FOR UPDATES
-*
-*
-**********************************/ 
-
 
 /********************************
 **** SHADER HELPER FUNCTIONS ****
@@ -160,8 +152,27 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 
-export const renderCheck = gpu.createKernel(function(voronoi_red) {
-  this.color(voronoi_red[this.thread.y][this.thread.x], 0, 0);//voronoi_green[this.thread.y][this.thread.x], voronoi_blue[this.thread.y][this.thread.x]);
+export const colorByVoronoiWeighting = gpu.createKernel(function(positions_texture, voronoi_texture, colors_texture, targets_texture) {
+  // for each pixel,
+  // what is it's associated agent
+  // what is the weighting of this pixel in relation to the agent and its target
+
+  return 0.5;
+})
+.setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
+.setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
+
+export const renderCheck = gpu.createKernel(function(voronoi, color_index) {
+	if (color_index == 0) {
+		this.color(voronoi[this.thread.y][this.thread.x], 0, 0);
+	} else if (color_index == 1) {
+		this.color(0, voronoi[this.thread.y][this.thread.x], 0);
+	} else if (color_index == 2) {
+		this.color(0, 0, voronoi[this.thread.y][this.thread.x]);
+	} else {
+		// should reach this color index so forcing gpujs fragment shader to error
+		this.color(-1, -1, -1);
+	}
 })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 .setGraphical(true);
