@@ -45,8 +45,9 @@ import {
 var render = new Renderer();
 
  // setup scene
-camera.position.set(32, 10, 32);
-cameraControls.target.set(0, 0, 0);
+camera.position.set(0, 20, 120);
+// target set in renderer.js
+// cameraControls.target.set(0, 0, 0);
 
 const scene = new Scene();
 
