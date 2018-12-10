@@ -46,8 +46,9 @@ export const gpu = new GPU({
 export const gui = new DAT.GUI();
 export const params = {
   title: "GUI",
-  debugging: 0,
+  debugging: false,
   render_mode: 0,
+  pause: false,
 };
 gui.add(params, 'title');
 gui.add(params, 'render_mode', 0, 7).step(1).onChange(function(newVal) {
@@ -55,17 +56,18 @@ gui.add(params, 'render_mode', 0, 7).step(1).onChange(function(newVal) {
 });
 gui.add(params, 'debugging').onChange(function(newVal) {
   if (newVal) {
-    canvas.z = 0;
-    back_canvas.z = 1;
+    canvas.style.display = "none";
+    //back_canvas.style.display = "block";
   } else {
-    canvas.z = 1;
-    back_canvas.z = 0;
+    canvas.style.display = "block";
+    //back_canvas.style.display = "none";
   }
 });
+gui.add(params, 'pause');
 
 // initialize statistics widget
 const stats = new Stats();
-stats.setMode(1); // 0: fps, 1: ms
+stats.setMode(0); // 0: fps, 1: ms
 stats.domElement.style.position = 'absolute';
 stats.domElement.style.left = '0px';
 stats.domElement.style.top = '0px';
