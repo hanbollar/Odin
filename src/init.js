@@ -30,17 +30,6 @@ export const gl = DEBUG ? WebGLDebug.makeDebugContext(glContext, (err, funcName,
 gl.viewport(0, 0, gl.canvas.clientWidth, gl.canvas.clientHeight);
 // ^^^ cant use gl.drawingBufferWidth, gl.drawingBufferHeight here because not matching approp dimensions. forcing the fit instead.
 
-// setup gui
-export const gui = new DAT.GUI();
-export const params = {
-  title: "GUI",
-  render_mode: 0,
-};
-gui.add(params, 'title');
-gui.add(params, 'render_mode', 0, 7).step(1).onChange(function(newVal) {
-    params.render_mode = newVal;
-});
-
 // back canvas for gpu setup and texture passing so visual and texture vals dont conflict
 var back_canvas = document.getElementById('back-canvas');
 const back_canvas_context = canvas.getContext('webgl2');
@@ -51,6 +40,27 @@ export const gpu = new GPU({
     canvas: back_canvas,
     webgl: back_canvas_context,
     mode: gpu
+});
+
+// setup gui
+export const gui = new DAT.GUI();
+export const params = {
+  title: "GUI",
+  debugging: 0,
+  render_mode: 0,
+};
+gui.add(params, 'title');
+gui.add(params, 'render_mode', 0, 7).step(1).onChange(function(newVal) {
+    params.render_mode = newVal;
+});
+gui.add(params, 'debugging').onChange(function(newVal) {
+  if (newVal) {
+    canvas.z = 0;
+    back_canvas.z = 1;
+  } else {
+    canvas.z = 1;
+    back_canvas.z = 0;
+  }
 });
 
 // initialize statistics widget

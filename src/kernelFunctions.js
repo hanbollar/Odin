@@ -282,12 +282,16 @@ export const positionsToViableArray = gpu.createKernel(function(positions_2eleme
 
   const which_vec3 = floor(this.thread.x / 3.0);
   var vec3_element = this.thread.x % 3; 
+  var mult_factor = this.constants.screen_x;
 
   if (vec3_element == 1) { return 0; }
-  if (vec3_element == 2) { vec3_element -= 1; }
-  return positions_2elements[which_vec3][vec3_element];
+  if (vec3_element == 2) {
+    vec3_element -= 1;
+    mult_factor = this.constants.screen_y;
+  }
+  return mult_factor * positions_2elements[which_vec3][vec3_element];
 })
-.setConstants({ length: NUM_PARTICLES })
+.setConstants({ length: NUM_PARTICLES, screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([NUM_PARTICLES * 3]);
 
 export const velocitiesToViableArray = gpu.createKernel(function(positions_2elements, oldPositions_2elements) {

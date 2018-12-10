@@ -1,6 +1,6 @@
 import { gl, canvas, abort } from './init';
 
-export const NUM_PARTICLES = 30.0;
+export const NUM_PARTICLES = 64.0;
 export const FLOOR_WIDTH = 500.0;
 export const FLOOR_HEIGHT = 500.0;
 
