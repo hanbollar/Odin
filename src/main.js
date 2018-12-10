@@ -1,4 +1,4 @@
- import { makeRenderLoop, camera, cameraControls, gui, gl, canvas, params } from './init';
+ import { makeRenderLoop, camera, cameraControls, gl, canvas, params } from './init';
  import Renderer from './renderer'
  import { mat4, vec4, vec2 } from 'gl-matrix';
  import { canvasToImage } from './utils'
@@ -20,7 +20,7 @@ require('./main');
 var render = new Renderer();
 
  // setup scene
-camera.position.set(32, 10, 32);
+camera.position.set(0, 20, 120);
 cameraControls.target.set(0, 0, 0);
 
 const scene = new Scene();

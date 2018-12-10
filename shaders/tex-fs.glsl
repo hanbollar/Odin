@@ -21,23 +21,37 @@ float happyaxis[230] = float[230](-3.6804, 3.8492, 3.1128, 0.3552, 1.2418, 3.112
 uniform vec3 agentPositions[NUM_AGENTS];
 uniform vec3 agentForwards[NUM_AGENTS];
 
-uniform float agentTimeOffsets[NUM_AGENTS];
 uniform float time;
 uniform int texDim;
 uniform float worldDim;
 
+uniform float agentTimeOffset[NUM_AGENTS];
+uniform float agentGender[NUM_AGENTS];
+uniform float agentNervous[NUM_AGENTS];
+uniform float agentWeight[NUM_AGENTS];
+uniform float agentHappy[NUM_AGENTS];
+
 const float PI = 3.14159265359;
 const float speed = 1.0;
-const float gender = 5.0;
-const float nervous = 0.0;
-const float weight = 0.0;
-const float happy = 0.0;
+
+// uncomment this, and comment getMarker variables to test range of baked animation
+// found that 5.0 is a good upper bound
+// const float gender = 5.0;
+// const float nervous = 5.0;
+// const float weight = 5.0;
+// const float happy = 5.0;
 
 out vec4 fragColor;
 
 
-float getMarker(int i, float initphase)
+float getMarker(int agentIndex, int i)
 {
+	float initphase = agentTimeOffset[agentIndex];
+	float gender = agentGender[agentIndex];
+	float weight = agentWeight[agentIndex];
+	float nervous = agentNervous[agentIndex];
+	float happy = agentHappy[agentIndex];
+
     float agentSpeed = ((((meanwalker[45]
         + (gender * genderaxis[45]))
         + (weight * weightaxis[45]))
@@ -142,9 +156,9 @@ void main(void)
     {
         int jointIndex = int( mod(gl_FragCoord.x, 16.0) - 1.5 );
 
-        float x = getMarker(jointIndex + 15, agentTimeOffsets[agentIndex]);
-        float y = getMarker(jointIndex + 30, agentTimeOffsets[agentIndex]);
-        float z = getMarker(jointIndex +  0, agentTimeOffsets[agentIndex]);
+        float x = getMarker(agentIndex, jointIndex + 15);
+        float y = getMarker(agentIndex, jointIndex + 30);
+        float z = getMarker(agentIndex, jointIndex +  0);
 
         // NOTE: WE SCALE BAKED JOINT NUMBERS DOWN BY 0.01
         vec4 localPos = vec4(0.01 * x, 0.01 * y, 0.01 * z, 1.0);
