@@ -21,7 +21,8 @@ var render = new Renderer();
 
  // setup scene
 camera.position.set(0, 20, 120);
-cameraControls.target.set(0, 0, 0);
+// target set in renderer.js
+// cameraControls.target.set(0, 0, 0);
 
 const scene = new Scene();
 

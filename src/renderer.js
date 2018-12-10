@@ -11,7 +11,7 @@ class Renderer
     this.walker = new Walker();
 
     // SET THESE TWO VARIABLES
-    this.worldDimension = 500.0;
+    this.worldDimension = 500.0; // assumes world is square, centered at (0,0)
     this.numAgents = 16 * Math.pow(4, 0); // must be 16 times a power of 4
     // TEX DIMENSION SET AUTOMATICALLY
     this.texDimension = Math.sqrt(this.numAgents * 16);
@@ -19,12 +19,14 @@ class Renderer
     this.agentPos = [];
     this.agentFwd = [];
 
+    // RANDOMNESS OF AGENTS TO MAKE SCENE INTERESTING
     this.agentOff = new Array(this.numAgents);
     this.agentGen = new Array(this.numAgents);
     this.agentNer = new Array(this.numAgents);
     this.agentWei = new Array(this.numAgents);
     this.agentHap = new Array(this.numAgents);
     this.agentRad = new Array(this.numAgents);
+    
     // initialize randomness of agents
     for (var i = 0; i < this.numAgents; i++)
     {
@@ -163,9 +165,9 @@ class Renderer
 
   drawScene() 
   {
-    /////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     // FOR RENDERING TO TEXTURE
-    /////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     gl.viewport(0, 0, this.texDimension, this.texDimension);
 
@@ -206,7 +208,10 @@ class Renderer
     gl.enableVertexAttribArray(this.tex_uniforms.v_position);
     gl.vertexAttribPointer(this.tex_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
 
+    ////////////////////////////////////////////////////////////////////////////
     // uniforms
+
+    /*
     var agentPos = [];
     for (var i = 0; i < this.numAgents; i++)
     {
@@ -214,7 +219,6 @@ class Renderer
         catch (pos)
         {
             agentPos.push(-75.0 + 10*pos);
-            //agentPos.push(0.0);
             agentPos.push(0.0);
             agentPos.push(0.0);
         }
@@ -233,38 +237,30 @@ class Renderer
         }
     }
     gl.uniform3fv(this.tex_uniforms.agentForwards, agentFwd);
+    */
 
-    // var agentOff = [];
-    // for (var k = 0; k < this.numAgents; k++)
-    // {
-    //     try { throw k }
-    //     catch (off)
-    //     {
-    //         agentOff.push(off * 90);
-    //         //agentOff.push(0.0);
-    //     }
-    // }
+    gl.uniform3fv(this.tex_uniforms.agentPositions, this.agentPos);
+    gl.uniform3fv(this.tex_uniforms.agentForwards, this.agentFwd);
+
     gl.uniform1fv(this.tex_uniforms.agentTimeOffset, this.agentOff);
     gl.uniform1fv(this.tex_uniforms.agentGender, this.agentGen);
     gl.uniform1fv(this.tex_uniforms.agentNervous, this.agentNer);
     gl.uniform1fv(this.tex_uniforms.agentWeight, this.agentWei);
     gl.uniform1fv(this.tex_uniforms.agentHappy, this.agentHap);
 
-    // gl.uniform3fv(this.tex_uniforms.agentPositions, this.agentPos);
-    // gl.uniform3fv(this.tex_uniforms.agentForwards, this.agentFwd);
-
     gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
     gl.uniform1i(this.tex_uniforms.texDim, this.texDimension);
     gl.uniform1f(this.tex_uniforms.worldDim, this.worldDimension);
     
+    ////////////////////////////////////////////////////////////////////////////
 
     // FINALLY, draw, 6 vertices because double sided
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 
 
-    //////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
     // FOR CROWD SIMULATION MAIN SCENE
-    //////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////
 
     // fixes resizing window
     gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
@@ -272,10 +268,6 @@ class Renderer
     // Now draw the main scene, which is 3D, using the texture.
     gl.bindTexture(gl.TEXTURE_2D, null);
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Draw to default framebuffer.
-
-
-
-
 
     // clear all values before redrawing
     gl.clearColor(0.2, 0.0, 0.2, 1.0);  
@@ -294,15 +286,17 @@ class Renderer
     gl.enableVertexAttribArray(this.crowd_uniforms.v_position);
     gl.vertexAttribPointer(this.crowd_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
     
+    ////////////////////////////////////////////////////////////////////////////
     // uniforms
+
     //gl.uniformMatrix4fv(this.crowd_uniforms.u_viewProj, false, this.VP);
 
     // for sdf walking
     gl.uniform2f(this.crowd_uniforms.resolution, canvas.clientWidth, canvas.clientHeight);
     gl.uniform1f(this.crowd_uniforms.time, (Date.now() - this.startTime) * .001);
     gl.uniform1f(this.crowd_uniforms.fov, camera.fov * Math.PI / 180);
-    gl.uniform1f(this.crowd_uniforms.raymarchMaximumDistance, 500);
-    gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.001);
+    gl.uniform1f(this.crowd_uniforms.raymarchMaximumDistance, this.worldDimension);
+    gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.01);
     gl.uniform3f(this.crowd_uniforms.camera, camera.position.x, camera.position.y, camera.position.z);
     gl.uniform3f(this.crowd_uniforms.target, 0, 10, 0);
 
@@ -320,6 +314,7 @@ class Renderer
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, agent_tex);
 
+    ////////////////////////////////////////////////////////////////////////////
 
     // draw, 6 vertices because double sided
     gl.drawArrays(gl.TRIANGLES, 0, 6);

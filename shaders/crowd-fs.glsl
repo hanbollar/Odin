@@ -28,11 +28,11 @@ void main()
 */
 
 
-// resources: https://github.com/nicoptere/raymarching-for-THREE
-
 #define FLT_MAX 3.402823466e+38
 
+// UPDATE THIS ONLY
 #define NUM_AGENTS 16
+
 #define JOINT_TEX_SCALE 50.0
 #define AGENT_BOUNDING_HEIGHT 18.0
 #define AGENT_BOUNDING_RAD 7.0
@@ -205,7 +205,7 @@ vec2 field( vec3 position )
             vec3 agentPos = (texture(u_image, (uvStartPos / float(texDim) )).xyz - vec3(0.5)) * worldDim;
 
             // CAPSULE BOUNDING BOX OPTIMIZATION
-            // skeleton = smin(skeleton, capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD), 0.0);
+            //skeleton = smin(skeleton, capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD), 0.0);
             if (capsule( position, agentPos, agentPos + vec3(0.0, AGENT_BOUNDING_HEIGHT, 0.0), AGENT_BOUNDING_RAD).x < AGENT_BOUNDING_RAD)
             {
               vec3 joint0  = texture(u_image, (uvStartPos + vec2( 1.0, 0.0)) / float(texDim) ).xyz;
@@ -295,25 +295,24 @@ vec2 field( vec3 position )
 //the actual raymarching from:
 //https://github.com/stackgl/glsl-raytrace/blob/master/index.glsl
 
-vec2 raymarching( vec3 rayOrigin, vec3 rayDir, float maxd, float precis ) {
-
+vec2 raymarching( vec3 rayOrigin, vec3 rayDir, float maxd, float precis ) 
+{
     float latest = precis * 2.0;
     float dist   = 0.0;
     float type   = -1.0;
-    for (int i = 0; i < raymarchSteps; i++) {
-
+    for (int i = 0; i < raymarchSteps; i++) 
+    {
         if (latest < precis || dist > maxd) break;
 
-        vec2 result = field( rayOrigin + rayDir * dist );
+        vec2 result = field(rayOrigin + rayDir * dist);
         latest = result.x;
         dist += latest;
         type = result.y;
     }
 
     vec2 res = vec2(-1.0, -1.0 );
-    if (dist < maxd) { res = vec2( dist, type ); }
+    if (dist < maxd) {res = vec2( dist, type); }
     return res;
-
 }
 
 //https://github.com/stackgl/glsl-sdf-normal
@@ -351,23 +350,14 @@ void main()
     vec3 col = vec3( 0.85 );
 
     // background color
-    //gl_FragColor = vec4(mix( col, vec3(1.), screenPos.y), 1.0 );
     fragColor = vec4(0.30, 0.30, 0.34, 1.0 );
     
     if ( collision.x > -0.5)
     {
-
         vec3 pos = camera + rayDirection * collision.x;
-
         vec3 nor = calcNormal( pos, 0.1 );
-        //vec3 tex = textureCube( cubemap, nor ).rgb;
-
-        //col = mix( col, tex, collision.y );
-
         col = col * rimlight( pos + vec3(0.0, worldDim, 0.0), nor ) + nor * 0.2;
-
         fragColor = vec4( col, 1.0 );
     }
-
 }
 
