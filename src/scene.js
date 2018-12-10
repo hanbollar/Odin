@@ -22,11 +22,6 @@ class Scene {
       this.particle_targets.push(vec3.create());
     }
 
-    var target1_x = 1;
-    var target1_y = 1;
-    var target2_x = FLOOR_WIDTH * 0.75;
-    var target2_y = FLOOR_HEIGHT * 0.75;
-
     // create initial values
     for (var i = 0.0; i < NUM_PARTICLES; ++i) {
       this.particle_positions[i][0] = Math.random() * FLOOR_WIDTH;
@@ -45,12 +40,12 @@ class Scene {
 
       // TODO - update targets to be a better value
       if (i % 2 == 0) {
-        this.particle_targets[i][0] = target1_x;
-        this.particle_targets[i][1] = target1_y;
+        this.particle_targets[i][0] = FLOOR_WIDTH - FLOOR_WIDTH / 4.0;
+        this.particle_targets[i][1] = i / NUM_PARTICLES * FLOOR_HEIGHT;
         this.particle_targets[i][2] = 0;
       } else {
-        this.particle_targets[i][0] = target2_x;
-        this.particle_targets[i][1] = target2_y;
+        this.particle_targets[i][0] = FLOOR_WIDTH / 4.0;
+        this.particle_targets[i][1] = i / NUM_PARTICLES * FLOOR_HEIGHT;
         this.particle_targets[i][2] = 0;
       }
     }

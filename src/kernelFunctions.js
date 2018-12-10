@@ -6,7 +6,7 @@ import { FLOOR_HEIGHT, FLOOR_WIDTH, NUM_PARTICLES } from './utils'
 const FLT_MAX = Math.pow(3.402823466, 38);
 const AGENT_VIS_RADIUS = 100.0;
 const PIXEL_BUFFER_RAD = 0.05;
-const AGENT_DRAW_RAD = 2.0;
+const AGENT_DRAW_RAD = 20.0;
 
 
 /************************************
@@ -52,17 +52,6 @@ const computeMarkerWeight_options = {
   returnType: 'Number'
 }
 gpu.addFunction(computeMarkerWeight, computeMarkerWeight_options);
-
-function computeMarkerMDist(agent_x, agent_y, marker_x, marker_y) {
-  var agent_to_marker_x = agent_x - marker_x;
-  var agent_to_marker_y = agent_y - marker_y;
-  return sqrt( agent_to_marker_x * agent_to_marker_x + agent_to_marker_y * agent_to_marker_y);
-}
-const computeMarkerMDist_options = {
-	paramTypes: {agent_x: 'Number', agent_y: 'Number', marker_x: 'Number', marker_y: 'Number'},
-	returnType: 'Number'
-}
-gpu.addFunction(computeMarkerMDist, computeMarkerMDist_options);
 
 function colorToIndex(channel_value, numParticles) {
   const temp_colorToIndex = channel_value * numParticles;
@@ -126,11 +115,13 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
   var depth = 0;
   var pos_x = 0;
   var pos_y = 0;
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
   for (var i = 0; i < this.constants.length; ++i) {
     pos_x = positions_texture[i][0] * this.constants.screen_x;
     pos_y = positions_texture[i][1] * this.constants.screen_y;
 
-    depth = coneDepth(this.thread.x, this.thread.y, pos_x, pos_y);
+    depth = coneDepth(x_i, y_i, pos_x, pos_y);
 
     if (depth < closest_max_depth) {
       second_closest_max_depth = closest_max_depth;
@@ -144,10 +135,10 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
   }
 
   // color based on distances
-  var closest_x_diff = abs(this.thread.x - positions_texture[closest_index][0] * this.constants.screen_x);
-  var closest_y_diff = abs(this.thread.y - positions_texture[closest_index][1] * this.constants.screen_y);
-  var second_closest_x_diff = abs(this.thread.x - positions_texture[second_closest_index][0] * this.constants.screen_x);
-  var second_closest_y_diff = abs(this.thread.y - positions_texture[second_closest_index][1] * this.constants.screen_y);
+  var closest_x_diff = abs(x_i - positions_texture[closest_index][0] * this.constants.screen_x);
+  var closest_y_diff = abs(y_i - positions_texture[closest_index][1] * this.constants.screen_y);
+  var second_closest_x_diff = abs(x_i - positions_texture[second_closest_index][0] * this.constants.screen_x);
+  var second_closest_y_diff = abs(y_i - positions_texture[second_closest_index][1] * this.constants.screen_y);
 
   var closest_dist2 = closest_x_diff * closest_x_diff + closest_y_diff * closest_y_diff;
   var second_closest_dist2 = second_closest_x_diff * second_closest_x_diff + second_closest_y_diff * second_closest_y_diff;
@@ -191,9 +182,9 @@ export const summedWeightPerAgent = gpu.createKernel(function(pixel_weights, pos
   var sum = 0;
   for (var i = x_start; i < x_end; ++i) {
     for (var j = y_start; j < y_end; ++j) {
-      pixel_index = colorToIndex(voronoi_red[j][i], this.constants.length);
+      pixel_index = colorToIndex(voronoi_red[i][j], this.constants.length);
       if (pixel_index == this.thread.x) {
-        sum += pixel_weights[j][i];
+        sum += pixel_weights[i][j];
       }
     }
   }
@@ -208,22 +199,25 @@ export const pixelWeights = gpu.createKernel(function(positions, voronoi_red, co
   // what is it's associated agent
   // what is the weighting of this pixel in relation to the agent and its target
 
-  const agent_index = colorToIndex(voronoi_red[this.thread.y][this.thread.x], this.constants.length);
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
+
+  const agent_index = colorToIndex(voronoi_red[x_i][y_i], this.constants.length);
   // if not on a valid agent's index (ie in white buffer region) this has no weight
   if (agent_index == this.constants.length) { return 0;}
 
   return computeMarkerWeight(
                   positions[agent_index][0] * this.constants.screen_x,
   							  positions[agent_index][1] * this.constants.screen_y,
-		  					  this.thread.x,
-		  					  this.thread.y,
+		  					  x_i,
+		  					  y_i,
 		  					  targets[agent_index][0] * this.constants.screen_x,
 		  					  targets[agent_index][1] * this.constants.screen_y);
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT]);
 
-export const colorByVoronoiWeighting = gpu.createKernel(function(positions, voronoi_pixelWeight, agent_summedWeight, voronoi_red, colors, targets) {
+export const actualVoronoiWeightingPerPixel = gpu.createKernel(function(positions, voronoi_pixelWeight, agent_summedWeight, voronoi_red, colors, targets, component) {
   // for each pixel, compute weight of pixel in relation to associated position
 
   // for each pixel,
@@ -232,36 +226,50 @@ export const colorByVoronoiWeighting = gpu.createKernel(function(positions, voro
   // what is the total summed weighting of all those affecting pixel's agent
   // what is mi of this pixel in relation to pixel's agent
 
-  const agent_index = colorToIndex(voronoi_red[this.thread.y][this.thread.x], this.constants.length);
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
+
+  const agent_index = colorToIndex(voronoi_red[x_i][y_i], this.constants.length);
   // if not on a valid agent's index (ie in white buffer region) this has no weight
   if (agent_index == this.constants.length) { return 0;}
 
-  const mi = computeMarkerMDist( positions[agent_index][0] * this.constants.screen_x,
-              							  	 positions[agent_index][1] * this.constants.screen_y,
-            		  					  	 this.thread.x,
-            		  					  	 this.thread.y);
-  return mi * voronoi_pixelWeight[this.thread.y][this.thread.x] / agent_summedWeight[agent_index];
+  const mi_x = x_i - positions[agent_index][0] * this.constants.screen_x;
+  const mi_y = y_i - positions[agent_index][1] * this.constants.screen_y;
+  const v_weight = voronoi_pixelWeight[x_i][y_i]  / agent_summedWeight[agent_index];
+  if (component == 0) {
+    return mi_x * v_weight;
+  } else if (component == 1) {
+    return mi_y * v_weight;
+  } else {
+    // invalid component option:
+    // this will throw errors in the fragment shader when passed to the render check
+    // when drawing it on canvas in debug mode
+    return -1;
+  }
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 
-export const positionsUpdate = gpu.createKernel(function(old_positions, velocities) {
+export const positionsUpdate = gpu.createKernel(function(old_positions, velocities_x, velocities_y) {
   // an array of vec2s - created as 2d array is stepped through as
   // [width][height] s.t. [this.thread.y][this.thread.x]
   const vec2_element = this.thread.x;
   const which_vec2 = this.thread.y;
 
-  // new p = old p + velo
-  return old_positions[which_vec2][vec2_element] + velocities[which_vec2][vec2_element];
-})
-.setConstants({ length: NUM_PARTICLES })
-.setOutput([2, NUM_PARTICLES]);
+  // used to normalize velocity
+  const length = sqrt(velocities_x[which_vec2] * velocities_x[which_vec2] + velocities_y[which_vec2] * velocities_y[which_vec2]);
+  var vel_element = velocities_x[which_vec2];
+  if (vec2_element == 1) {
+    vel_element = velocities_y[which_vec2];
+  }
 
-export const positionsUpdate_superKernel = gpu.combineKernels(positionsUpdate, summedWeightPerAgent, function(voronoi_red, voronoi_green, positions, colors, targets) {
-  // voronoi_red: which agent is associated with which pixel
-  // voronoi_green: final weightings for each pixel in relation to its associated agent
-  return positionsUpdate(positions, summedWeightPerAgent(voronoi_green, positions, voronoi_red, colors, targets));
-});
+  // new p = old p + velo
+  const influence = 0.01;
+  var value = old_positions[which_vec2][vec2_element] + vel_element / length * influence;
+  return clamp(value, 0, 1);
+})
+.setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
+.setOutput([2, NUM_PARTICLES]);
 
 /*************************
 **** OUTPUT FUNCTIONS ****
@@ -302,9 +310,11 @@ export const velocitiesToViableArray = gpu.createKernel(function(positions_2elem
 *********************************/
 
 export const positionsToScreenVisual = gpu.createKernel(function(pos) {
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
 	for (var i = 0; i < this.constants.length; ++i) {
-		if (abs(pos[i][0] * this.constants.screen_x - this.thread.x) < this.constants.draw_rad
-		  && abs(pos[i][1] * this.constants.screen_y - this.thread.y) < this.constants.draw_rad) {
+		if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
+		  && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
 			this.color(pos[i][0], 0, pos[i][1]);
 		}
 	}
@@ -313,14 +323,37 @@ export const positionsToScreenVisual = gpu.createKernel(function(pos) {
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 .setGraphical(true);
 
+export const velToScreenVisual = gpu.createKernel(function(pos, vel_x, vel_y) {
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
+  var bool = 0;
+  for (var i = 0; i < this.constants.length; ++i) {
+    if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
+      && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
+      this.color(vel_x[i], 0, vel_y[i]);
+      bool = 1;
+    }
+  }
+  if (bool == 0) {
+    this.color(1, 1, 1);
+  }
+})
+.setConstants({ length: NUM_PARTICLES, screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, draw_rad: AGENT_DRAW_RAD })
+.setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
+.setGraphical(true);
+
+
 export const allColoringVisual = gpu.createKernel(function(voronoi_red, voronoi_green, pos) {
-	var red = voronoi_red[this.thread.y][this.thread.x];
-	var green = voronoi_green[this.thread.y][this.thread.x];
+	const x_i = this.thread.y;
+  const y_i = this.thread.x;
+
+  var red = voronoi_red[x_i][y_i];
+	var green = voronoi_green[x_i][y_i];
   var blue = 0;
 
   for (var i = 0; i < this.constants.length; ++i) {
-    if (abs(pos[i][0] * this.constants.screen_x - this.thread.x) < this.constants.draw_rad
-        && abs(pos[i][1] * this.constants.screen_y - this.thread.y) < this.constants.draw_rad) {
+    if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
+        && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
       red = 1;
       blue = 1;
     }
@@ -336,9 +369,12 @@ export const velocityAtPositionsVisual = gpu.createKernel(function(velocities, p
   var green = 0;
   var blue = 0;
 
+  const x_i = this.thread.y;
+  const y_i = this.thread.x;
+
   for (var i = 0; i < this.constants.length; ++i) {
-    if (abs(pos[i][0] * this.constants.screen_x - this.thread.x) < this.constants.draw_rad
-        && abs(pos[i][1] * this.constants.screen_y - this.thread.y) < this.constants.draw_rad) {
+    if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
+        && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
       green = velocities[i][0];
       blue = velocities[i][1];
     }
@@ -360,6 +396,15 @@ export const renderCheck = gpu.createKernel(function(voronoi, color_index) {
     // should never reach this color index so forcing gpujs fragment shader to error
     this.color(-1, -1, -1);
   }
+})
+.setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
+.setGraphical(true);
+
+export const renderCheckAbs = gpu.createKernel(function(voronoi_x, voronoi_y) {
+  const a = 10.0; // influence
+  this.color( abs(a * voronoi_x[this.thread.y][this.thread.x]),
+              0,
+              abs(a * voronoi_y[this.thread.y][this.thread.x]));
 })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
 .setGraphical(true);
