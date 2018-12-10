@@ -16,13 +16,13 @@ ________________________________________________________________________________
 
 [//]: #(![Progress](https://img.shields.io/badge/implementation-in%20progress-orange.svg)
 
-## About the Project
+## Overview
 
 We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and final sdf visualization.
 
 The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
 
-A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial visualization WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds simulation, and Eric built on the WebGL 2.0 pipeline to create a procedural marionette sdf visualization with fps optimizations to represent the moving agents.
+A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to tackle specific topics. Hannah implemented the initial WebGL 2.0 pipeline setup and backend gpu.js crowd behavior pipeline with `render pass` manipulations, and Eric implemented the WebGL 2.0 procedural sdf-based crowd visualization with bounding capsule and texture data storage optimizations.
 
 ## Breakdown
 
@@ -39,7 +39,7 @@ A twist on this BioCrowds implementation is that we wanted to push the boundarie
 	- [Body Size](#body-size)
 	- [Optimizations](#optimizations)
 	- [Bounding Capsules](#bounding-capsules)
-	- [Storing Data in Texture](#storing-data-in-texture)
+	- [Texture Data Storage](#texture-data-storage)
 	- [Performance Analysis](#sdf-performance-analysis)
 - [Build and Run Instructions](#build-and-run-instructions)
 - [References](#references)
@@ -157,6 +157,8 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 MORE INFO TO BE ADDED HERE LATER
 
+
+
 ## Crowd Visualization
 
 ### Signed Distance Fields
@@ -181,7 +183,7 @@ Sphere-tracing, a form of ray-marching, is costly when there are hundreds of age
 
 ![](./images/bounding-capsule-01.png)
 
-#### Storing Data in Texture
+#### Texture Data Storage
 
 ![](./images/render-to-texture-01.png)
 
