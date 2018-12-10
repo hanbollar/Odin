@@ -4,7 +4,7 @@ import { mat4, vec4, vec2 } from 'gl-matrix';
 import { FLOOR_HEIGHT, FLOOR_WIDTH, NUM_PARTICLES } from './utils'
 
 const FLT_MAX = Math.pow(3.402823466, 38);
-const AGENT_VIS_RADIUS = 100.0;
+const AGENT_VIS_RADIUS = 80.0;
 const PIXEL_BUFFER_RAD = 0.05;
 const AGENT_DRAW_RAD = 20.0;
 
