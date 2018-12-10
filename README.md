@@ -35,6 +35,48 @@ In Progress - More information coming soon.
 
 [Milestone 3](./milestones/Milestone3.md)
 
+## Crowd Visualization
+
+This section discusses the details of crowd visualization that Eric Chiu has implemented.
+
+### Signed Distance Fields
+
+Randomization makes the scene visually dynamic. With agents varying in movement, shape, and size, the simulation becomes more interesting. The advantage of sphere-tracing signed distance fields is that we can procedurally generate a variety of characters with ease. Two procedural techniques were used to tackle animation and body size.
+
+#### Animation
+
+![](./images/sdf-4-diff-walks.gif)
+
+![](./images/sdf-16-walk-blend.gif)
+
+#### Body Size
+
+![](./images/sdf-16-size-random.gif)
+
+### Optimizations
+
+Sphere-tracing, a form of ray-marching, is costly when there are hundreds of agents in the scene. For every step in the ray march, we have to evaulate the signed distance functions for every body part of every agent. In order to support a large number of agents, two optimizations were used: bounding capsules and storing agent data in a texture.
+
+#### Bounding Capsules
+
+![](./images/bounding-capsule-01.png)
+
+#### Storing Data in Texture
+
+![](./images/render-to-texture-01.png)
+
+![](./images/render-to-texture-02.png)
+
+![](./images/render-to-texture-03.png)
+
+#### Performance Analysis
+
+
+
+## Crowd Behavior
+
+This section discusses the details of crowd behavior that Hannah Bollar has implemented.
+
 ## Build and Run Instructions
 
 #### Build
