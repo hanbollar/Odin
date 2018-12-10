@@ -28,7 +28,7 @@ class Scene {
     var target2_y = FLOOR_HEIGHT * 0.75;
 
     // create initial values
-    for (var i = 0; i < NUM_PARTICLES; ++i) {
+    for (var i = 0.0; i < NUM_PARTICLES; ++i) {
       this.particle_positions[i][0] = Math.random() * FLOOR_WIDTH;
       this.particle_positions[i][1] = Math.random() * FLOOR_HEIGHT;
       this.particle_positions[i][2] = 0;

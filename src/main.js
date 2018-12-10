@@ -12,6 +12,8 @@ import {
   params
 } from './init';
 import {
+  agentIndexCheck,
+  agentIndexVisCheck,
   allColoringVisual,
   colorByVoronoi,
   colorByVoronoiWeighting,
@@ -62,6 +64,9 @@ var outputToRender_vel = [NUM_PARTICLES * 3];
 var pixel_weightings;
 var summed_weightings = [NUM_PARTICLES];
 
+console.log('positions');
+console.log(pos_1);
+
 /*************************
 ********** RUN ***********
 **************************/
@@ -100,11 +105,14 @@ makeRenderLoop(
     } else if (DEBUG && params.render_mode == 5) {
       // color positions based on update velocity
       var temp = velocitiesToViableArray(pos_2, pos_1);
-      console.log(temp);
       velocityAtPositionsVisual(temp, pos_1);
       document.getElementsByTagName('body')[0].appendChild(velocityAtPositionsVisual.getCanvas());
+    } else if (DEBUG && params.render_mode == 6) {
+      // color to voronoi check
+      agentIndexVisCheck(voronoi_red, colors);
+      document.getElementsByTagName('body')[0].appendChild(agentIndexVisCheck.getCanvas());
     }
-    pos_2 = positionsUpdate_superKernel(voronoi_red, voronoi_weighting_green, pos_1, colors, targets);
+    pos_2 = pos_1;//positionsUpdate_superKernel(voronoi_red, voronoi_weighting_green, pos_1, colors, targets);
 
     if (!DEBUG || params.render_mode != 1) {
       outputToRender_pos = positionsToViableArray(pos_2);
@@ -118,7 +126,9 @@ makeRenderLoop(
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
+    console.log('value transfer');
     pos_1 = pos_2;
+    console.log('done');
 
     ++iter;
     console.log(iter);
