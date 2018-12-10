@@ -196,7 +196,7 @@ export const summedWeightPerAgent = gpu.createKernel(function(pixel_weights, pos
 
 export const pixelWeights = gpu.createKernel(function(positions, voronoi_red, colors, targets) {
   // for each pixel,
-  // what is it's associated agent
+  // what is its associated agent
   // what is the weighting of this pixel in relation to the agent and its target
 
   const x_i = this.thread.y;

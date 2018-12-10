@@ -1,6 +1,6 @@
 Odin
 ===============
-*WebGL 2.0 Crowd-Sim with gpu.js*
+*Crowd-Simulation using a gpu.js pipeline with walking Marionettes visualized in WebGL 2.0*
 
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
@@ -10,34 +10,154 @@ Odin
 - Hannah Bollar: [LinkedIn](https://www.linkedin.com/in/hannah-bollar/), [Website](http://hannahbollar.com/)
 - Eric Chiu: [LinkedIn](https://www.linkedin.com/in/echiu1997/), [Website](http://www.erichiu.com/)
 
-#### Tested on:
-- Systems:
-	- Windows 10 Home, i7-8550U @ 1.8GHz 15.8 GB (personal)
-	- Mac OS X El Capitan 10.11.6, 2.5 GHz Intel Core i7, AMD Radeon R9 M370X 2048 MB (personal)
-- Browsers:
-	- Google Chrome Version 70.0.3538.77 (Official Build) (64-bit)
-	- Firefox Version 63.0.1 (Official Build) (64-bit)
-
 ____________________________________________________________________________________
 
-![Developer Hannah](https://img.shields.io/badge/Developer-Hannah-0f97ff.svg?style=flat) ![Developer Eric](https://img.shields.io/badge/Developer-Eric-0f97ff.svg?style=flat) ![WebGL 2.0](https://img.shields.io/badge/WebGL-2.0-lightgrey.svg) ![gpu.js](https://img.shields.io/badge/GPGPU-gpu.js-yellow.svg) ![Built](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg) ![Progress](https://img.shields.io/badge/implementation-in%20progress-orange.svg )
+![Developer Hannah](https://img.shields.io/badge/Developer-Hannah-0f97ff.svg?style=flat) ![Developer Eric](https://img.shields.io/badge/Developer-Eric-0f97ff.svg?style=flat) ![gpu.js](https://img.shields.io/badge/GPGPU-gpu.js-yellow.svg) ![WebGL 2.0](https://img.shields.io/badge/WebGL-2.0-lightgrey.svg) ![Built](https://img.shields.io/appveyor/ci/gruntjs/grunt.svg) ![Issues](https://img.shields.io/badge/issues-none-green.svg)
+
+[//]: #(![Progress](https://img.shields.io/badge/implementation-in%20progress-orange.svg)
+
+## About the Project
+
+We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and final sdf visualization.
+
+The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
+
+A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial visualization WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds simulation, and Eric built on the WebGL 2.0 pipeline to create a procedural marionette sdf visualization with fps optimizations to represent the moving agents.
+
+## Breakdown
+
+- [Crowd Behavior](#crowd-behavior)
+	- [What is gpu.js?](#what-is-gpujs)
+	- [How does the BioCrowds sim work?](#biocrowds-implementation)
+	- [Pipeline using gpujs](#pipeline-using-gpujs)
+	- [Hurdles](#hurdles)
+	- [Tips for Using gpujs!](#tips-for-using-gpujs)
+	- [Performance Analysis](#gpujs-performance-analysis)
+- [Crowd Visualization](#crowd-visualization)
+	- [Signed Distance Fields](#signed-distance-fields)
+	- [Animation](#animation)
+	- [Body Size](#body-size)
+	- [Optimizations](#optimizations)
+	- [Bounding Capsules](#bounding-capsules)
+	- [Storing Data in Texture](#storing-data-in-texture)
+	- [Performance Analysis](#sdf-performance-analysis)
+- [Build and Run Instructions](#build-and-run-instructions)
+- [References](#references)
+- [Milestones](#progress-milestones)
+- [Bloopers](#bloopers)
+
+## Crowd Behavior
+
+### BioCrowds with gpujs
+
+#### What is gpujs
+
+[gpu.js](http://gpu.rocks/) is an interesting blend between a gpu kernel and a webgl shader. On the user-end, the code looks and is easily understood as a kernel that can be switched from a gpu pass and cpu pass by a simple toggle; however, under the compiler hood each kernel function acts as its own fragment shader. Additionally, gpujs contains optimizations such as superKernels and megaKernels to wrap these shader creations together. One think that was helpful is that variables created and passed in by the user are prepended with a `user_` to prevent duplicates, and it also helps for debugging .
+
+Features like a shader:
+- compiles out with a shader wrapper
+- can specifically pass in `uniform` variables (they label them as `constants`) instead of just a constant `in` variable
+- `this.color` acts as `outColor` from general OpenGL or WebGL coloring
+- `in` variables which are parameters to the methods
+- can only be in 3D array technically because of the limited thread indexing for just `x, y, z`; however, it doesnt limit the array lengths for each of these dimensions.
+
+Features like a kernel:
+- methods have to be added to the gpu when written - pass in the `function` and an `options: { parameters, returnType }`.
+- not restricted by four color channels, so can output to an n-dimensional by n-dimensional by n-dimensional array if you wish to do so.
+- `parameters` - method parameters that also can be considered `in` variables as mentioned above.
+- access elements and information based on `this.thread.component`
+
+#### BioCrowds Implementation
+
+Generally as explained in the introduction, BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker.
+
+Used red channel as `agent` indices into information arrays.
+
+MORE INFO TO BE ADDED HERE LATER
+
+`Note: Since we're using pixels instead of randomly placed markers, there's more likely to occur stuck states where certain agents can't pass one another though both need to do so. One fix for this is to re-introduce this margin of error by creating a height-field and using the 3d-distance (though this still isnt optimal) or using tilted-cones to the left of the direction of velocity for the depth-buffer pass to re-introduce some preference of direction.`
+
+#### Debug Views
+
+Voronoi Check for first Coloring Setup | Border Buffer Check  | Pixel to Associated Agent Id
+|:-------------------------:|:-------------------------:|:-------------------------:|
+![](./images/voronoi.png)| ![](./images/border_check_works.png) |![](./images/agent_to_id_red.png)
+
+| First Weighting Pass | Velocity Weighting For Update|
+|:-------------------------:|:-------------------------:|
+| ![](./images/first_weighting_pass.png) |![](./images/velocity_weightings_for_update.png)
+
+| Velocities at each Agent Position | Combined View|
+|:-------------------------:|:-------------------------:|
+![](./images/velocities_of_agents_at_positions.png)| ![](./images/combined.png)
+
+#### Pipeline using gpujs
+
+In the progress of this implementation, there were two noteworthy pipeline iterations. The most noteworthy was the following pipeline in that it worked at `~60fps` due to the help of the `superKernel` and the common use of `outputToTexture` passes for information. 
+
+![fast pipeline](./milestones/milestone-3/pipeline_new.png)
+
+However, even with the optimizations, it kept erroring for certain output values and wasnt optimal to debug due to mutliple steps being in wrapper functions. To fix this, we switched to the below pipeline. Though it has more function calls, they're much smaller and sectioned out better. By itself (ie without the webgl sdf updates), it runs at about `~10-12 fps`. Not optimal, but it works. This is still to be resolved and optimized later.
+
+![slow pipeline but works](./images/slower.png)
+
+#### Hurdles
+
+Inside of the actual `gpu.kernel` calls, there were issues with `vec3` and `vec2` creations (which is currently a known issue with gpu.js). In a usual fragment shader, `line 0` and `line 1` should compile out both to `vec3`s; however, because of the wrapping in gpu.js, they compile out to two separate outputs:
+```
+(0) var v_1 = vec3(0, 1, 0);    --> float user_v_1 = vec3(0, 1, 0);
+(1) const v_2 = vec3(0, 1, 0);  --> float user_v_2 = vec3(0, 1, 0);
+```
+The gpu.js library introduced `this.vec3` (and others) to accomodate for this; however, the version we used seems to only compile as expected when using `const`, so to avoid this issue and unnecessary variable creations general multi-dimensional arrays and individual color channels were favored instead.
+```
+(0) var v_1 = this.vec3(0, 1, 0);    --> float user_v_1 = vec3(0, 1, 0);
+(1) const v_2 = this.vec3(0, 1, 0);  --> vec3 user_v_2 = vec3(0, 1, 0);
+```
+
+Additionally, there ended up being a lot of issues with indexing especially for the `position` and `velocity` arrays. The issues were mainly because the kernel's output is written to a buffer in the following forms
+```
+3D: [width, height, depth]
+2D: [width, height]
+1D: [length]
+```
+which is simple enough however, when indexing into this with the kernel's threads, it's actually in the following orders
+```
+3D: arr[this.thread.z][this.thread.y][this.thread.x]
+2D: arr[this.thread.y][this.thread.x]
+1D: arr[this.thread.x]
+```
+which led to everytime certain kernels were updated or optimized to a different dimention, there would be a bit of confusion for some values when debugging. Once there was the understanding of the alternating indices, most updates began working properly.
+
+Lastly, the pipeline was functioning almost fully, except for the final weighting calculation for the velocity update, which was partially due to putting together superKernels with improper parameters which wasnt discovered 'til later (such as a section where a 2D array was expected, but a 1D one was being used by mistake) so to resolve this, the pipeline was updated yet again from the more optimal version to the last one that works (go back to the [pipeline](#pipeline-using-gpujs) for more info).
+
+### Tips for using gpujs
+
+- `setGraphical(true)` - </br> this output call was super helpful in that could allow the user to render directly to canvas. This was used on multiple occasions, not just for render passes and debug views but also for setting up the initial framework to check for the vertical flip in the texture pass and if two different steps in the pipeline were rearranged with different positions due to a mistake even when no positional updates occured.
 
 
-[//]: # ( ![Issues](https://img.shields.io/badge/issues-none-green.svg)
+- `const x_i = this.thread.y;
+ const y_i = this.thread.x;` - </br> One way to make indexing easier, especially for texture output passes, was to rename the thread indices to readable values. Often the code would end up being of the form `value.x + this.thread.x` instead of what was expected as `value.x + this.thread.y`. Even for general arrays, switching to `const which_vec2 = this.thread.y; const vec2_element = this.thread.x;` to identify `vec2` or `vec3` or (etc) component and the element of that vector was more readable for later debugging.
 
-## The Project
 
-In Progress - More information coming soon.
+- `[NUM_ITEMS, 2] vs [2, NUM_ITEMS]` - </br> this just comes down to, do you prefer row major or column major. I often found that when writing kernel output arrays in the conventional form `[column_length, index]` and even calling from the arrays the same way; however, this caused issues, because `[NUM_ITEMS, 2]` corresponds to a `width: NUM_ITEMS` and a `height: 2`; however indexing into it would be `[this.thread.y][this.thread.x]`, so the code was often written in the form `positions[0][index]` to get the `x` value of the position in question which got to be a bit confusing. Especially, because the output wouldnt match the same `(x, y)` indexing scheme as some of the fully canvased `width x height` dimensioned arrays because of flip-flopping between iterations. To resolve issues like this and for readability for general array outputs (not necessarily texture outputs), make sure your `setDimensions(...)` has its parameters in the form of `[2, NUM_ITEMS]`. That way, it matches the convention a bit more for expected indexing and copying over ideas for actual fragment shaders like `shaderFun` would be more expected to index properly as well.
 
-[Milestone 1](./milestones/Milestone1.md)
 
-[Milestone 2](./milestones/Milestone2.md)
+- `render_output` - </br> html canvas elements are your friend. You can generally draw directly to the document, or if you use `outputToTexture` (which will also make your code much faster!). `outputToTexture` is also handy in that it uses the `canvas` element passed into the `gpujs` element when it was created, meaning by just calling `outputToTexture`, the image automatically shows up on your screen (like when there's a texture left bound in the OpenGL pipeline).
 
-[Milestone 3](./milestones/Milestone3.md)
+
+- `gpu.addFunction` - </br> this becomes super helpful if you code is redundant and/or uses a lot of complicated math (like in procedural work, etc) that needs to be encapsulated for readability.
+
+
+- `debug views` - </br> when building a project - either for machine learning, graphics, etc - have a visual debug output for JavaScript is extremely helpful because it can tell the user in one look, what values are enclosed and a general range of them as well. Printing to console is also helpful; however, it's not as fast and the actual act of printing can slow down the general runtime excessively while also clogging up possible console error messages.
+
+
+- `superKernel and megaKernel` - </br> both of them are incredibly helpful not only for streamlining method calls from one output to another in terms of code-readability, but also for optimizating runtime since the compiler recognizes the texture and/or general array connection between the methods and optimizes for this pass during initial compile time instead of during runtime. much faster!
+
+### gpujs Performance Analysis
+
+MORE INFO TO BE ADDED HERE LATER
 
 ## Crowd Visualization
-
-This section discusses the details of crowd visualization that Eric Chiu has implemented.
 
 ### Signed Distance Fields
 
@@ -69,13 +189,10 @@ Sphere-tracing, a form of ray-marching, is costly when there are hundreds of age
 
 ![](./images/render-to-texture-03.png)
 
-#### Performance Analysis
+#### Sdf Performance Analysis
 
 
 
-## Crowd Behavior
-
-This section discusses the details of crowd behavior that Hannah Bollar has implemented.
 
 ## Build and Run Instructions
 
@@ -97,6 +214,14 @@ Go to root directory
 Run `npm start`
 Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
+
+#### Tested on:
+- Systems:
+	- Windows 10 Home, i7-8550U @ 1.8GHz 15.8 GB (personal)
+	- Mac OS X El Capitan 10.11.6, 2.5 GHz Intel Core i7, AMD Radeon R9 M370X 2048 MB (personal)
+- Browsers:
+	- Google Chrome Version 70.0.3538.77 (Official Build) (64-bit)
+	- Firefox Version 63.0.1 (Official Build) (64-bit)
 
 ## References
 
@@ -131,3 +256,13 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 	- [signed distance functions](http://jamie-wong.com/2016/07/15/ray-marching-signed-distance-functions/)
 	- [IQ's website](http://iquilezles.org/index.html)
 	- [Raymarching examples and figures](https://github.com/nicoptere/raymarching-for-THREE)
+
+## Progress Milestones
+
+- [Milestone 1](./milestones/Milestone1.md)
+- [Milestone 2](./milestones/Milestone2.md)
+- [Milestone 3](./milestones/Milestone3.md)
+
+## Bloopers
+
+ADD VISUALS

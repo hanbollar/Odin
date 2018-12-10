@@ -45,7 +45,7 @@ export const gpu = new GPU({
 // setup gui
 export const gui = new DAT.GUI({ width: 500 });
 export const params = {
-  title: "GPU.JS BIOCROWDS WITH WEBGL2 MARIONETTE VISUAL",
+  title: "gpu.js bioCrowds with webgl2 sdfs",
   render_mode: 0,
   pause: false,
 };
