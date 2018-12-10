@@ -37,7 +37,7 @@ export const params = {
   render_mode: 0,
 };
 gui.add(params, 'title');
-gui.add(params, 'render_mode', 0, 4).step(1).onChange(function(newVal) {
+gui.add(params, 'render_mode', 0, 5).step(1).onChange(function(newVal) {
     params.render_mode = newVal;
 });
 

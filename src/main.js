@@ -12,14 +12,20 @@ import {
   params
 } from './init';
 import {
+  allColoringVisual,
   colorByVoronoi,
   colorByVoronoiWeighting,
   initialVec3toVec2KernelPassing,
   initialColorsToImage,
+  pixelWeights,
   positionsUpdate,
   positionsUpdate_superKernel,
+  positionsToScreenVisual,
   positionsToViableArray,
+  summedWeightPerAgent,
   renderCheck,
+  velocitiesToViableArray,
+  velocityAtPositionsVisual,
   velocityUpdate
 } from './kernelFunctions';
 import {
@@ -50,10 +56,11 @@ var iter_limit = 10;
 var prevtime = 0;
 var currTime = 0;
 var voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-var voronoi_weighting_green = colorByVoronoiWeighting(pos_1, voronoi_red, colors, targets);
-var outputToRender_pos1 = [NUM_PARTICLES * 3];
-var outputToRender_pos2 = [NUM_PARTICLES * 3];
-
+var voronoi_weighting_green;
+var outputToRender_pos = [NUM_PARTICLES * 3];
+var outputToRender_vel = [NUM_PARTICLES * 3];
+var pixel_weightings;
+var summed_weightings = [NUM_PARTICLES];
 
 /*************************
 ********** RUN ***********
@@ -66,18 +73,42 @@ makeRenderLoop(
 
     // only need one color because hash function we're using has all color channels be the same value.
     voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
-    voronoi_weighting_green = colorByVoronoiWeighting(pos_1, voronoi_red, colors, targets);
+    pixel_weightings = pixelWeights(pos_1, voronoi_red, colors, targets);
+    summed_weightings = summedWeightPerAgent(pixel_weightings, pos_1, voronoi_red, colors, targets);
+    voronoi_weighting_green = colorByVoronoiWeighting(pos_1,
+                                                      pixel_weightings,
+                                                      summed_weightings,
+                                                      voronoi_red,
+                                                      colors,
+                                                      targets);
     if (DEBUG && params.render_mode == 1) {
+      // color based on which pixels are associated with which agents
       renderCheck(voronoi_red, 0);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     } else if (DEBUG && params.render_mode == 2) {
+      // color based on velocity weights
       renderCheck(voronoi_weighting_green, 1);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
+    } else if (DEBUG && params.render_mode == 3) {
+      // color based on pure positions
+      positionsToScreenVisual(pos_1);
+      document.getElementsByTagName('body')[0].appendChild(positionsToScreenVisual.getCanvas());
+    } else if (DEBUG && params.render_mode == 4) {
+      // full combination
+      allColoringVisual(voronoi_red, voronoi_weighting_green, pos_1);
+      document.getElementsByTagName('body')[0].appendChild(allColoringVisual.getCanvas());
+    } else if (DEBUG && params.render_mode == 5) {
+      // color positions based on update velocity
+      var temp = velocitiesToViableArray(pos_2, pos_1);
+      console.log(temp);
+      velocityAtPositionsVisual(temp, pos_1);
+      document.getElementsByTagName('body')[0].appendChild(velocityAtPositionsVisual.getCanvas());
     }
-    pos_2 = positionsUpdate_superKernel(voronoi_red, pos_1, colors, targets);
+    pos_2 = positionsUpdate_superKernel(voronoi_red, voronoi_weighting_green, pos_1, colors, targets);
 
     if (!DEBUG || params.render_mode != 1) {
-      outputToRender_pos2 = positionsToViableArray(pos_2);
+      outputToRender_pos = positionsToViableArray(pos_2);
+      outputToRender_vel = velocitiesToViableArray(pos_2, pos_1);
 
       // send stuff to webgl2 pipeline
       // if (not on first frame... then render...)
@@ -88,8 +119,9 @@ makeRenderLoop(
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
     pos_1 = pos_2;
-    outputToRender_pos1 = outputToRender_pos2;
 
+    ++iter;
+    console.log(iter);
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('end: render update');  }
   }
 )();
