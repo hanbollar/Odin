@@ -86,28 +86,33 @@ makeRenderLoop(
                                                       voronoi_red,
                                                       colors,
                                                       targets);
+    console.log(pixel_weightings);
     if (DEBUG && params.render_mode == 1) {
       // color based on which pixels are associated with which agents
       renderCheck(voronoi_red, 0);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
     } else if (DEBUG && params.render_mode == 2) {
+      // weightings based on distance to agent and orientation in relation to target check
+      renderCheck(pixel_weightings, 0);
+      document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
+    } else if (DEBUG && params.render_mode == 3) {
       // color based on velocity weights
       renderCheck(voronoi_weighting_green, 1);
       document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
-    } else if (DEBUG && params.render_mode == 3) {
+    } else if (DEBUG && params.render_mode == 4) {
       // color based on pure positions
       positionsToScreenVisual(pos_1);
       document.getElementsByTagName('body')[0].appendChild(positionsToScreenVisual.getCanvas());
-    } else if (DEBUG && params.render_mode == 4) {
+    } else if (DEBUG && params.render_mode == 5) {
       // full combination
       allColoringVisual(voronoi_red, voronoi_weighting_green, pos_1);
       document.getElementsByTagName('body')[0].appendChild(allColoringVisual.getCanvas());
-    } else if (DEBUG && params.render_mode == 5) {
+    } else if (DEBUG && params.render_mode == 6) {
       // color positions based on update velocity
       var temp = velocitiesToViableArray(pos_2, pos_1);
       velocityAtPositionsVisual(temp, pos_1);
       document.getElementsByTagName('body')[0].appendChild(velocityAtPositionsVisual.getCanvas());
-    } else if (DEBUG && params.render_mode == 6) {
+    } else if (DEBUG && params.render_mode == 7) {
       // color to voronoi check
       agentIndexVisCheck(voronoi_red, colors);
       document.getElementsByTagName('body')[0].appendChild(agentIndexVisCheck.getCanvas());

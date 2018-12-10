@@ -163,7 +163,7 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
     return 1;
   } else {
     // color_index - to allow for different channel outputs; however, hash function atm denotes all color channels for a pixel are the same
-    return colors_texture[color_index][closest_index];
+    return colors_texture[closest_index][color_index];
   }
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
