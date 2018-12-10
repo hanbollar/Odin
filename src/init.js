@@ -43,26 +43,31 @@ export const gpu = new GPU({
 });
 
 // setup gui
-export const gui = new DAT.GUI();
+export const gui = new DAT.GUI({ width: 500 });
 export const params = {
-  title: "GUI",
-  debugging: false,
+  title: "GPU.JS BIOCROWDS WITH WEBGL2 MARIONETTE VISUAL",
   render_mode: 0,
   pause: false,
 };
 gui.add(params, 'title');
-gui.add(params, 'render_mode', 0, 7).step(1).onChange(function(newVal) {
-    params.render_mode = newVal;
-});
-gui.add(params, 'debugging').onChange(function(newVal) {
-  if (newVal) {
-    canvas.style.display = "none";
-    //back_canvas.style.display = "block";
-  } else {
+
+gui.add(params, 'render_mode', { Simulation: '0',
+                                 Just_Marionette_Movement: '-1',
+                                 Agent_ids: '1',
+                                 First_Pass_of_Weightings_of_Pixel_for_Agent: '2',
+                                 Velocity_Weightings_for_Update: '3',
+                                 Agent_Positions: '4',
+                                 Velocities_of_Agents_at_Positions: '5',
+                                 Combination_Agent_ids_Velocity_and_Weights: '6',
+                                }).onChange(function(newVal) {
+
+  if (newVal == 0 || newVal == -1) {
     canvas.style.display = "block";
-    //back_canvas.style.display = "none";
+  } else {
+    canvas.style.display = "none";
   }
-});
+}).listen();
+
 gui.add(params, 'pause');
 
 // initialize statistics widget

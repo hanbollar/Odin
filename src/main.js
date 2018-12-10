@@ -83,46 +83,43 @@ makeRenderLoop(
     summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
     summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
 
-    pos_2 = positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
+    if (params.render_mode != -1) {
+      pos_2 = positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
+    } // otherwise: dont update positions
 
-    if (params.debugging) {
-      if (params.render_mode == 0) {
+    if (params.render_mode > 0) {
+      if (params.render_mode == 1) {
         // color based on which pixels are associated with which agents
         renderCheck(voronoi_red, 0);
         document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
-      } else if (params.render_mode == 1) {
+      } else if (params.render_mode == 2) {
         // weightings based on distance to agent and orientation in relation to target check
         renderCheck(pixel_weightings, 2);
         document.getElementsByTagName('body')[0].appendChild(renderCheck.getCanvas());
-      } else if (params.render_mode == 2) {
+      } else if (params.render_mode == 3) {
         // color based on velocity weights
         renderCheckAbs(voronoi_weighting_green_x, voronoi_weighting_green_y);
         document.getElementsByTagName('body')[0].appendChild(renderCheckAbs.getCanvas());
-      } else if (params.render_mode == 3) {
+      } else if (params.render_mode == 4) {
         // color based on pure positions
         positionsToScreenVisual(pos_1);
         document.getElementsByTagName('body')[0].appendChild(positionsToScreenVisual.getCanvas());
-      } else if (params.render_mode == 4) {
+      } else if (params.render_mode == 5) {
         // color based on update velo of pure positions
         velToScreenVisual(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
         document.getElementsByTagName('body')[0].appendChild(velToScreenVisual.getCanvas());
-      } else if (params.render_mode == 5) {
+      } else if (params.render_mode == 6) {
         // full combination
         allColoringVisual(voronoi_red, voronoi_weighting_green_x, pos_1);
         document.getElementsByTagName('body')[0].appendChild(allColoringVisual.getCanvas());
-      } else if (params.render_mode == 6) {
-        // color to voronoi check
-        agentIndexVisCheck(voronoi_red, colors);
-        document.getElementsByTagName('body')[0].appendChild(agentIndexVisCheck.getCanvas());
       }
-    } else {
-
-      // send stuff to webgl2 pipeline
-      // if (not on first frame... then render...)
-      // render...(outputToRender_pos1, outputToRender_pos2);
-      render.updateAgents(positionsToViableArray(pos_2), velocitiesToViableArray(pos_2, pos_1));
-      render.update();
     }
+    
+    // send stuff to webgl2 pipeline
+    // if (not on first frame... then render...)
+    // render...(outputToRender_pos1, outputToRender_pos2);
+    render.updateAgents(positionsToViableArray(pos_2), velocitiesToViableArray(pos_2, pos_1));
+    render.update();
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
