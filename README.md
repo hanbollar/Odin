@@ -159,6 +159,8 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about +15fps from the cpu implementation; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`.
 
+
+
 ## Crowd Visualization
 
 ### Signed Distance Fields
