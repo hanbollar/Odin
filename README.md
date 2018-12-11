@@ -1,7 +1,6 @@
-Odin
-===============
-*Crowd-Simulation using a gpu.js pipeline with walking Marionettes visualized in WebGL 2.0*
-
+![title](./images/title.gif)
+View Demo [Here](http://vimeo.com/hannahbollar/odin)
+# Odin: gpujs BioCrowds with WebGL2 Marionettes
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
@@ -70,12 +69,13 @@ Features like a kernel:
 #### BioCrowds Implementation
 
 Generally as explained in the introduction, BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker. 
+Note: Since we're using pixels instead of randomly placed markers, there's more likely to occur stuck states where certain agents can't pass one another though both need to do so. One fix for this is to re-introduce this margin of error by creating a height-field and using the 3d-distance (though this still isnt optimal) or using tilted-cones to the left of the direction of velocity for the depth-buffer pass to re-introduce some preference of direction.
 
-Additionally, to optimize marker to agent checking, we associate each marker (pixel) with each `agent` for the first pixel pass through. Once this pixel distance check part is finished, the value it holds corresponds to the iteration color of the agent when it was first created. That is, the value corresponds to the `agent_index / total_number_of_agents` so that it's on a proper `[0, 1)` scaling for visual output and can be easily used to port back for indexing into the stored `positions` and `velocity` arrays for further calculations. 
+Additionally, to optimize marker to agent checking, we associate each marker (pixel) with each `agent` for the first pixel pass through. Once this pixel distance check part is finished, the value it holds corresponds to the iteration color of the agent when it was first created. That is, the value corresponds to the `agent_index / total_number_of_agents` so that it's on a proper `[0, 1)` scaling for visual output and can be easily used to port back for indexing into the stored `positions` and `velocity` arrays for further calculations.  
 
-Depending on if 
+In our implementation we have the original positions of all agents randomized, and their targets set either along a line on the upper or lower half of the screen.
 
-`Note: Since we're using pixels instead of randomly placed markers, there's more likely to occur stuck states where certain agents can't pass one another though both need to do so. One fix for this is to re-introduce this margin of error by creating a height-field and using the 3d-distance (though this still isnt optimal) or using tilted-cones to the left of the direction of velocity for the depth-buffer pass to re-introduce some preference of direction.`
+For more information on implementation optimizations - read the Crowd Simulation part of the [references](#references) section below. 
 
 #### Debug Views
 
@@ -134,6 +134,8 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 - `setGraphical(true)` - </br> this output call was super helpful in that could allow the user to render directly to canvas. This was used on multiple occasions, not just for render passes and debug views but also for setting up the initial framework to check for the vertical flip in the texture pass and if two different steps in the pipeline were rearranged with different positions due to a mistake even when no positional updates occured.
 
+- `outputToTexture(true)` - </br> Instead of porting the output back to the cpu to be read in by another kernel `gpu out --> cpu --> gpu in`, this leaves the output as a WebGL texture allowing for the process to become `gpu out --> gpu in` for information passing between kernel. One of the ways to show off the power of gpujs!
+
 
 - `const x_i = this.thread.y;
  const y_i = this.thread.x;` - </br> One way to make indexing easier, especially for texture output passes, was to rename the thread indices to readable values. Often the code would end up being of the form `value.x + this.thread.x` instead of what was expected as `value.x + this.thread.y`. Even for general arrays, switching to `const which_vec2 = this.thread.y; const vec2_element = this.thread.x;` to identify `vec2` or `vec3` or (etc) component and the element of that vector was more readable for later debugging.
@@ -157,9 +159,7 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 ![](./images/bioCrowds_runtime.png)
 
-In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about +15fps from the cpu implementation; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`.
-
-
+In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about `+15fps` from the cpu implementation depending on the number of agents; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`. This shows off the power of gpujs!
 
 ## Crowd Visualization
 
@@ -269,4 +269,10 @@ Navigate to http://localhost:5650 on a browser that supports WebGL2
 
 ## Bloopers
 
-ADD VISUALS
+| Voronoi Update Velocity Not Scaled Properly | Incorrect Calculation for Buffer Between Agent Voronoi Sections | 
+|:-------------------------:|:-------------------------:|
+![](images/voronoi_update_overreacting_but_there.gif) | ![](./images/generic_weighting_overlap_white.png) |
+
+| Webgl2.0 Canvas Output Incorrect Sizing | Indexing and Mixup for SetOutputToTexture
+|:-------------------------:|:-------------------------:|
+![](./images/webgl2test.png) | ![](./images/changed_from_getcanvas_to_outputToTextureForVoronoi_issue1.png) |
