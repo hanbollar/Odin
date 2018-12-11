@@ -2,7 +2,8 @@
   "scripts": {
     "start": "webpack-dev-server",
     "start:production": "webpack-dev-server --env.production",
-    "build": "webpack --env.production"
+    "build": "webpack --env.production",
+    "homepage": "."
   },
   "dependencies": {
     "dat.gui": "^0.7.3",

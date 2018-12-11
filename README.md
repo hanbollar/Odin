@@ -16,13 +16,13 @@ ________________________________________________________________________________
 
 [//]: #(![Progress](https://img.shields.io/badge/implementation-in%20progress-orange.svg)
 
-## About the Project
+## Overview
 
 We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and final sdf visualization.
 
 The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
 
-A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial visualization WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds simulation, and Eric built on the WebGL 2.0 pipeline to create a procedural marionette sdf visualization with fps optimizations to represent the moving agents.
+A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds simulation, and Eric built on the WebGL 2.0 pipeline to create a procedural marionette sdf visualization with fps optimizations such as bounding capsule and texture data storage optimizations to represent the moving agents.
 
 ## Breakdown
 
@@ -39,7 +39,7 @@ A twist on this BioCrowds implementation is that we wanted to push the boundarie
 	- [Body Size](#body-size)
 	- [Optimizations](#optimizations)
 	- [Bounding Capsules](#bounding-capsules)
-	- [Storing Data in Texture](#storing-data-in-texture)
+	- [Texture Data Storage](#texture-data-storage)
 	- [Performance Analysis](#sdf-performance-analysis)
 - [Build and Run Instructions](#build-and-run-instructions)
 - [References](#references)
@@ -69,11 +69,11 @@ Features like a kernel:
 
 #### BioCrowds Implementation
 
-Generally as explained in the introduction, BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker.
+Generally as explained in the introduction, BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker. 
 
-Used red channel as `agent` indices into information arrays.
+Additionally, to optimize marker to agent checking, we associate each marker (pixel) with each `agent` for the first pixel pass through. Once this pixel distance check part is finished, the value it holds corresponds to the iteration color of the agent when it was first created. That is, the value corresponds to the `agent_index / total_number_of_agents` so that it's on a proper `[0, 1)` scaling for visual output and can be easily used to port back for indexing into the stored `positions` and `velocity` arrays for further calculations. 
 
-MORE INFO TO BE ADDED HERE LATER
+Depending on if 
 
 `Note: Since we're using pixels instead of randomly placed markers, there's more likely to occur stuck states where certain agents can't pass one another though both need to do so. One fix for this is to re-introduce this margin of error by creating a height-field and using the 3d-distance (though this still isnt optimal) or using tilted-cones to the left of the direction of velocity for the depth-buffer pass to re-introduce some preference of direction.`
 
@@ -155,7 +155,9 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 ### gpujs Performance Analysis
 
-MORE INFO TO BE ADDED HERE LATER
+![](./images/bioCrowds_runtime.png)
+
+In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about +15fps from the cpu implementation; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`.
 
 ## Crowd Visualization
 
@@ -181,7 +183,7 @@ Sphere-tracing, a form of ray-marching, is costly when there are hundreds of age
 
 ![](./images/bounding-capsule-01.png)
 
-#### Storing Data in Texture
+#### Texture Data Storage
 
 ![](./images/render-to-texture-01.png)
 
@@ -191,7 +193,7 @@ Sphere-tracing, a form of ray-marching, is costly when there are hundreds of age
 
 #### Sdf Performance Analysis
 
-
+MORE INFO TO BE ADDED LATER
 
 
 ## Build and Run Instructions
