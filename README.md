@@ -21,7 +21,7 @@ We implemented BioCrowds, a common simulation algorithm for moving `agents` arou
 
 The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
 
-A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds simulation, and Eric built on the WebGL 2.0 pipeline to create a procedural marionette sdf visualization with fps optimizations such as bounding capsule and texture data storage optimizations to represent the moving agents.
+A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds algorithm, and Eric implemented the WebGL 2.0 procedural sdf-based crowd visualization with bounding capsule and texture data storage optimizations
 
 ## Breakdown
 
