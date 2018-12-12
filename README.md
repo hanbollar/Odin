@@ -1,6 +1,6 @@
 ![title](./images/title.gif)
 View Demo [Here](http://vimeo.com/hannahbollar/odin)
-# Odin: gpujs BioCrowds with WebGL2 Marionettes
+# Odin: gpujs BioCrowds Algorithm with WebGL2 Crowd Visualization
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
@@ -17,17 +17,17 @@ ________________________________________________________________________________
 
 ## Overview
 
-We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and final sdf visualization.
+We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and the final crowd visualization.
 
 The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
 
-A twist on this BioCrowds implementation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds algorithm, and Eric implemented the WebGL 2.0 procedural sdf-based crowd visualization with bounding capsule and texture data storage optimizations.
+A twist on this crowd simulation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds algorithm, and Eric implemented the WebGL 2.0 procedural sdf-based crowd visualization with bounding capsule and texture data storage optimizations.
 
 ## Breakdown
 
 - [Crowd Behavior](#crowd-behavior)
 	- [What is gpu.js?](#what-is-gpujs)
-	- [How does the BioCrowds sim work?](#biocrowds-implementation)
+	- [BioCrowds Implementation](#biocrowds-implementation)
 	- [Pipeline using gpujs](#pipeline-using-gpujs)
 	- [Hurdles](#hurdles)
 	- [Tips for Using gpujs!](#tips-for-using-gpujs)
@@ -39,7 +39,7 @@ A twist on this BioCrowds implementation is that we wanted to push the boundarie
 	- [Optimizations](#optimizations)
 	- [Bounding Capsules](#bounding-capsules)
 	- [Texture Data Storage](#texture-data-storage)
-	- [Performance Analysis](#sdf-performance-analysis)
+	- [Performance Analysis](#visualization-performance-analysis)
 - [Build and Run Instructions](#build-and-run-instructions)
 - [References](#references)
 - [Milestones](#progress-milestones)
@@ -165,7 +165,7 @@ In comparison to a general cpu JavaScript implementation, the non working gpujs 
 
 ### Signed Distance Fields
 
-Randomization makes the scene visually dynamic. With agents varying in movement, shape, and size, the simulation becomes more interesting. The advantage of sphere-tracing signed distance fields is that we can procedurally generate a variety of characters with ease. Two procedural techniques were used to tackle animation and body size.
+Randomization makes the scene visually dynamic. With agents varying in movement, shape, and size, the crowd simulation becomes more interesting. The advantage of sphere-tracing signed distance fields is that we can procedurally generate a variety of characters with ease. Two procedural techniques were used to tackle animation and body size.
 
 #### Animation
 
@@ -179,13 +179,21 @@ Randomization makes the scene visually dynamic. With agents varying in movement,
 
 ### Optimizations
 
-Sphere-tracing, a form of ray-marching, is costly when there are hundreds of agents in the scene. For every step in the ray march, we have to evaulate the signed distance functions for every body part of every agent. In order to support a large number of agents, two optimizations were used: bounding capsules and storing agent data in a texture.
+Sphere-tracing, a form of ray-marching, is costly when there are hundreds, if not thousands, of agents in the scene. In order to support a large number of agents, two optimizations were used: bounding capsules and texture data storage.
 
 #### Bounding Capsules
 
+For every step in the ray march, we have to evaulate the signed distance functions for every body part of every agent. This is because we are trying to find the distance to the closest shape (signed distance function). We use this distance value to move forward that amount in the next ray march step. If there are 200 agents, and 13 sdfs represent 1 agent, we are performing a min distance comparision 2600 times every ray march step (not to mention we perform a raymarch for every pixel on the screen). 2600 min distance comparisons is costly, so if we figure out a way to reduce the number of comparisons, crowd visualization performance will greatly improve.
+
+A method of reducing the number of min distance comparisons is to treat each agent as one shape, a bounding capsule, when the position of a ray march is far away from an agent. When the position of a ray march is close to an agent (by an epsilon value), we can then treat the agent as 13 "higher resolution" sdfs. That way, we are only performing the 13 min distance comparisons when it is important.
+
 ![](./images/bounding-capsule-01.png)
 
+![](./images/bounding-capsule-02.png)
+
 #### Texture Data Storage
+
+For every step in the ray march, we have to calculate the world positions of the 15 joints for every agent. This is because every agent has its own world position, world forward direction, and local procedural animation. 
 
 ![](./images/render-to-texture-01.png)
 
@@ -193,9 +201,9 @@ Sphere-tracing, a form of ray-marching, is costly when there are hundreds of age
 
 ![](./images/render-to-texture-03.png)
 
-#### Performance Analysis
+#### Visualization Performance Analysis
 
-MORE INFO TO BE ADDED LATER
+The bounding capsules optimization allowed the simluation to run roughly 10 times faster given the same number of agents.
 
 
 ## Build and Run Instructions
