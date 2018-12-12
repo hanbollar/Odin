@@ -1,6 +1,6 @@
 ![title](./images/title.gif)
 View Demo [Here](http://vimeo.com/hannahbollar/odin)
-# Odin: gpujs BioCrowds Algorithm with WebGL2 Crowd Visualization
+# Odin: gpujs BioCrowds with WebGL2 Visualization
 
 **University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project**
 
@@ -17,9 +17,9 @@ ________________________________________________________________________________
 
 ## Overview
 
-We implemented BioCrowds, a common simulation algorithm for moving `agents` around a scene. Our main focus was not on the algorithm itself but on the pipeline in gpu.js and the final crowd visualization.
+We implemented a crowd simulation in which our main focus was not on the algorithm itself but on the pipeline in gpu.js and the final crowd visualization.
 
-The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
+For our crowd simulation, we're using the BioCrowds algorithm, a common simulation algorithm for moving `agents` around a scene. The technique was originally modeled after the vein pattern in leaves. This idea ultimately helps prevent `agents` from colliding with one another by using `markers` to keep a buffer range. Conventionally, this is modeled using the space colonization algorithm with `markers` scattered throughout the simulation space. During each `timeStep`, each `markers` is associated with the closest `agent` (within a max distance), and velocity for each `agent` is then calculated based on these `markers`.
 
 A twist on this crowd simulation is that we wanted to push the boundaries of what we knew in JavaScript, so we split up the work to better tackle specific features. Hannah implemented the initial WebGL 2.0 pipeline and the entire backend gpu.js pipeline along with `render pass` manipulations for the actual BioCrowds algorithm, and Eric implemented the WebGL 2.0 procedural sdf-based crowd visualization with bounding capsule and texture data storage optimizations.
 
@@ -27,7 +27,7 @@ A twist on this crowd simulation is that we wanted to push the boundaries of wha
 
 - [Crowd Behavior](#crowd-behavior)
 	- [What is gpu.js?](#what-is-gpujs)
-	- [BioCrowds Implementation](#biocrowds-implementation)
+	- [How does our BioCrowds Implementation Work?](#biocrowds-implementation)
 	- [Pipeline using gpujs](#pipeline-using-gpujs)
 	- [Hurdles](#hurdles)
 	- [Tips for Using gpujs!](#tips-for-using-gpujs)
@@ -68,7 +68,7 @@ Features like a kernel:
 
 #### BioCrowds Implementation
 
-Generally as explained in the introduction, BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker. 
+Generally as explained in the [introduction](#overview), BioCrowds is simulated using randomly placed `markers`; however, since we're threading this with texture passes, one way to streamline this is to use each pixel as a marker. 
 Note: Since we're using pixels instead of randomly placed markers, there's more likely to occur stuck states where certain agents can't pass one another though both need to do so. One fix for this is to re-introduce this margin of error by creating a height-field and using the 3d-distance (though this still isnt optimal) or using tilted-cones to the left of the direction of velocity for the depth-buffer pass to re-introduce some preference of direction.
 
 Additionally, to optimize marker to agent checking, we associate each marker (pixel) with each `agent` for the first pixel pass through. Once this pixel distance check part is finished, the value it holds corresponds to the iteration color of the agent when it was first created. That is, the value corresponds to the `agent_index / total_number_of_agents` so that it's on a proper `[0, 1)` scaling for visual output and can be easily used to port back for indexing into the stored `positions` and `velocity` arrays for further calculations.  
@@ -159,7 +159,7 @@ Lastly, the pipeline was functioning almost fully, except for the final weightin
 
 ![](./images/bioCrowds_runtime.png)
 
-In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about `+15fps` from the cpu implementation depending on the number of agents; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`. This shows off the power of gpujs!
+In comparison to a general cpu JavaScript implementation, the non working gpujs pipeline was extremely efficient with an improvement of about `+15fps` from the cpu implementation depending on the number of agents; however, as mentioned in the [pipeline](#pipeline-using-gpujs) section, this streamlined implementation with the superKernal wrapping had to be unwrapped for debugging purposes, leaving us with a not as optimized version running at about `10fps`. This is still a bit better than the general JavaScript implementation at `7fps`, showing off the power of gpujs! (note: number of agents used in the comparison simulation runs: `64`).
 
 ## Crowd Visualization
 
