@@ -48,6 +48,7 @@ export const params = {
   title: "gpu.js bioCrowds with webgl2 sdfs",
   render_mode: 0,
   pause: false,
+  reset: false
 };
 gui.add(params, 'title');
 
@@ -70,6 +71,12 @@ gui.add(params, 'render_mode', { Simulation: '0',
 
 gui.add(params, 'pause');
 
+var obj = { click_to_reset_the_sim: function() {
+  params.reset = true; // this toggles; is set back to false in main's looping after one iter.
+  console.log("the sim was reset.") 
+}};
+gui.add(obj,'click_to_reset_the_sim');
+
 // initialize statistics widget
 const stats = new Stats();
 stats.setMode(0); // 0: fps, 1: ms
@@ -79,7 +86,7 @@ stats.domElement.style.top = '0px';
 document.body.appendChild(stats.domElement);
 
 // Initialize camera
-export const camera = new PerspectiveCamera(120, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+export const camera = new PerspectiveCamera(120, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
 export const cameraControls = new OrbitControls(camera, canvas);
 cameraControls.enableDamping = true;
 cameraControls.enableZoom = true;
@@ -127,3 +134,4 @@ export function makeRenderLoop(render) {
 
 // import the main application
 require('./main');
+

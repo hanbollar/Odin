@@ -51,7 +51,7 @@ A twist on this crowd simulation is that we wanted to push the boundaries of wha
 
 #### What is gpujs
 
-[gpu.js](http://gpu.rocks/) is an interesting blend between a gpu kernel and a webgl shader. On the user-end, the code looks and is easily understood as a kernel that can be switched from a gpu pass and cpu pass by a simple toggle; however, under the compiler hood each kernel function acts as its own fragment shader. Additionally, gpujs contains optimizations such as superKernels and megaKernels to wrap these shader creations together. One think that was helpful is that variables created and passed in by the user are prepended with a `user_` to prevent duplicates, and it also helps for debugging.
+[gpu.js](http://gpu.rocks/) is an interesting blend between a gpu kernel and a webgl shader. On the user-end, the code looks and is easily understood as a kernel that can be switched from a gpu pass and cpu pass by a simple toggle; however, under the compiler hood each kernel function acts as its own fragment shader. Additionally, gpujs contains optimizations such as superKernels and megaKernels to wrap these shader creations together. One thing that was helpful is that variables created and passed in by the user are prepended with a `user_` to prevent duplicates, and it also helps for debugging.
 
 Features like a shader:
 - compiles out with a shader wrapper
@@ -189,8 +189,6 @@ A method of reducing the number of min distance comparisons is to treat each age
 
 ![](./images/bounding-capsule-01.png)
 
-![](./images/bounding-capsule-02.png)
-
 #### Texture Data Storage
 
 For every step in the ray march, we have to calculate the world positions of the 15 joints for every agent. This is because every agent has its own world position, world forward direction, and local procedural animation. 
@@ -211,21 +209,20 @@ The bounding capsules optimization allowed the simluation to run roughly 10 time
 #### Build
 ```
 Clone this repository
-Navigate to your root directory and run the following commands
+Navigate to your root directory and run the following command
 `npm install` 
-`npm install gpu.js`
-`npm install -g grunt-cli`
-`npm install grunt --save-dev`
 ```
 
 #### Run
 Need WebGL2-capable browser to run this project. Check for support on [WebGL Report](http://webglreport.com/?v=2) 
 
 ```
-Go to root directory
+Navigate to your root directory and run the following command
 Run `npm start`
 Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
+
+*Note: Currently there is a camera bug. When the simulation-scene first loads to gray, slowly click and drag to the left with your mouse until the figures appear (this issue only affects the `Simulation` and `Just_Marionette_Movement` modes)*
 
 #### Tested on:
 - Systems:

@@ -5,26 +5,33 @@
     "build": "webpack --env.production",
     "homepage": "."
   },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hanbollar/Odin.git"
+  },
   "dependencies": {
-    "dat.gui": "^0.7.3",
+    "dat.gui": "^0.7.6",
     "gl-matrix": "^2.4.0",
     "gpu.js": "^1.10.4",
-    "spectorjs": "^0.9.0",
-    "stats-js": "^1.0.0-alpha1",
+    "spectorjs": "^0.9.7",
+    "stats-js": "^1.0.1",
     "three": "^0.87.1",
     "three-js": "^79.0.0",
     "three-orbitcontrols": "^1.2.1",
     "webgl-debug": "^1.0.2"
   },
+  "license": "UNLICENSED",
   "devDependencies": {
     "babel-core": "^6.26.0",
-    "babel-loader": "^7.1.2",
-    "babel-minify-webpack-plugin": "^0.2.0",
-    "babel-preset-env": "^1.6.0",
-    "grunt": "^0.4.5",
-    "grunt-glsl": "^0.3.0",
-    "webpack": "^3.7.1",
-    "webpack-dev-server": "^2.9.2",
+    "babel-loader": "^7.1.4",
+    "babel-minify-webpack-plugin": "^0.3.1",
+    "babel-preset-env": "^1.6.1",
+    "grunt": "^1.0.4",
+    "grunt-cli": "^1.3.2",
+    "grunt-glsl": "^0.4.3",
+    "webpack": "^4.35.3",
+    "webpack-cli": "^3.3.5",
+    "webpack-dev-server": "^3.7.2",
     "webpack-glsl-loader": "^1.0.1"
   }
 }
