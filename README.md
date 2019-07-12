@@ -222,7 +222,7 @@ Run `npm start`
 Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
 
-*Note: Currently there is a camera bug. When the simulation-scene first loads to gray, slowly click and drag to the left with your mouse until the figures appear (this issue only occurs in the simulation scene)*
+*Note: Currently there is a camera bug. When the simulation-scene first loads to gray, slowly click and drag to the left with your mouse until the figures appear (this issue only affects the `Simulation` and `Just_Marionette_Movement` modes)*
 
 #### Tested on:
 - Systems:
