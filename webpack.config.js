@@ -11,8 +11,9 @@ module.exports = function(env) {
       path: path.join(__dirname, 'build'),
       filename: 'bundle.js',
     },
+    mode: 'development',
     module: {
-      loaders: [
+      rules: [
         {
           test: /\.js$/,
           exclude: /(node_modules|bower_components)/,

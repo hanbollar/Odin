@@ -189,8 +189,6 @@ A method of reducing the number of min distance comparisons is to treat each age
 
 ![](./images/bounding-capsule-01.png)
 
-![](./images/bounding-capsule-02.png)
-
 #### Texture Data Storage
 
 For every step in the ray march, we have to calculate the world positions of the 15 joints for every agent. This is because every agent has its own world position, world forward direction, and local procedural animation. 
@@ -213,19 +211,18 @@ The bounding capsules optimization allowed the simluation to run roughly 10 time
 Clone this repository
 Navigate to your root directory and run the following commands
 `npm install` 
-`npm install gpu.js`
-`npm install -g grunt-cli`
-`npm install grunt --save-dev`
 ```
 
 #### Run
 Need WebGL2-capable browser to run this project. Check for support on [WebGL Report](http://webglreport.com/?v=2) 
 
 ```
-Go to root directory
+Navigate to your root directory and run the following commands
 Run `npm start`
 Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
+
+*Note: Currently there is a camera bug. When the simulation-scene first loads to gray, slowly click and drag to the left with your mouse until the figures appear (this issue only occurs in the simulation scene)*
 
 #### Tested on:
 - Systems:

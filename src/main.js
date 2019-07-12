@@ -42,8 +42,8 @@ import {
 **************************/
 
 var render = new Renderer();
-camera.position.set(0, 20, 120);
 const scene = new Scene();
+camera.position.set(0, 10, 0);
 
 var pos_1 = initialVec3toVec2KernelPassing(scene.particle_positions);
 var pos_2;
@@ -69,6 +69,16 @@ makeRenderLoop(
   function() {
     if (params.pause) {
       return;
+    }
+    if (params.reset) {
+      params.reset = false;
+      iter = 0;
+      prevtime = 0;
+      currTime = 0;
+      pos_1 = initialVec3toVec2KernelPassing(scene.particle_positions);
+      targets = initialVec3toVec2KernelPassing(scene.particle_targets);
+      colors = initialColorsToImage(scene.particle_colors);
+      voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
     }
 
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
