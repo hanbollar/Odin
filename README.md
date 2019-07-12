@@ -209,7 +209,7 @@ The bounding capsules optimization allowed the simluation to run roughly 10 time
 #### Build
 ```
 Clone this repository
-Navigate to your root directory and run the following commands
+Navigate to your root directory and run the following command
 `npm install` 
 ```
 
@@ -217,7 +217,7 @@ Navigate to your root directory and run the following commands
 Need WebGL2-capable browser to run this project. Check for support on [WebGL Report](http://webglreport.com/?v=2) 
 
 ```
-Navigate to your root directory and run the following commands
+Navigate to your root directory and run the following command
 Run `npm start`
 Navigate to http://localhost:5650 on a browser that supports WebGL2
 ```
