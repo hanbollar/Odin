@@ -51,7 +51,7 @@ A twist on this crowd simulation is that we wanted to push the boundaries of wha
 
 #### What is gpujs
 
-[gpu.js](http://gpu.rocks/) is an interesting blend between a gpu kernel and a webgl shader. On the user-end, the code looks and is easily understood as a kernel that can be switched from a gpu pass and cpu pass by a simple toggle; however, under the compiler hood each kernel function acts as its own fragment shader. Additionally, gpujs contains optimizations such as superKernels and megaKernels to wrap these shader creations together. One think that was helpful is that variables created and passed in by the user are prepended with a `user_` to prevent duplicates, and it also helps for debugging.
+[gpu.js](http://gpu.rocks/) is an interesting blend between a gpu kernel and a webgl shader. On the user-end, the code looks and is easily understood as a kernel that can be switched from a gpu pass and cpu pass by a simple toggle; however, under the compiler hood each kernel function acts as its own fragment shader. Additionally, gpujs contains optimizations such as superKernels and megaKernels to wrap these shader creations together. One thing that was helpful is that variables created and passed in by the user are prepended with a `user_` to prevent duplicates, and it also helps for debugging.
 
 Features like a shader:
 - compiles out with a shader wrapper
