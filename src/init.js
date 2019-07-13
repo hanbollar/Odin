@@ -1,4 +1,5 @@
 export const DEBUG = false && process.env.NODE_ENV === 'development';
+const THREE = require('three')
 
 import DAT from 'dat.gui';
 import WebGLDebug from 'webgl-debug';
@@ -48,7 +49,7 @@ export const params = {
   title: "gpu.js bioCrowds with webgl2 sdfs",
   render_mode: 0,
   pause: false,
-  reset: false
+  reset: true
 };
 gui.add(params, 'title');
 
@@ -87,12 +88,22 @@ document.body.appendChild(stats.domElement);
 
 // Initialize camera
 export const camera = new PerspectiveCamera(120, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
+console.log(camera.getWorldDirection());
+camera.position.applyQuaternion( new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3( 0, 1, 0 ), // The positive y-axis
+        Math.PI
+    ));
 export const cameraControls = new OrbitControls(camera, canvas);
-cameraControls.enableDamping = true;
+cameraControls.enableDamping = false;
 cameraControls.enableZoom = true;
-cameraControls.rotateSpeed = 0.3;
-cameraControls.zoomSpeed = 1.0;
+cameraControls.rotateSpeed = 1.0;
+cameraControls.zoomSpeed = 0.5;
 cameraControls.panSpeed = 2.0;
+camera.position.applyQuaternion( new THREE.Quaternion().setFromAxisAngle(
+  new THREE.Vector3( 0, 1, 0 ), // The positive y-axis
+  3.0 * Math.PI / 4.0
+));
+cameraControls.update();
 
 function setSize(width, height) {
   canvas.width = width;
@@ -121,7 +132,7 @@ if (DEBUG) {
 
 // Creates a render loop that is wrapped with camera update and stats logging
 export function makeRenderLoop(render) {
-  return function tick() {
+  return function tick() {    
     cameraControls.update();
     stats.begin();
     render();

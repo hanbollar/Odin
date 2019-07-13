@@ -1,8 +1,8 @@
 import { gl, canvas, abort } from './init';
 
 export const NUM_PARTICLES = 64.0;
-export const FLOOR_WIDTH = 500.0;
-export const FLOOR_HEIGHT = 500.0;
+export const FLOOR_WIDTH = 700.0;
+export const FLOOR_HEIGHT =700.0;
 
 function downloadURI(uri, name) {
   var link = document.createElement('a');

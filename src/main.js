@@ -41,19 +41,21 @@ import {
 ****** INIT SETUP ********
 **************************/
 
+const THREE = require('three')
+
 var render = new Renderer();
 const scene = new Scene();
 camera.position.set(0, 10, 0);
 
-var pos_1 = initialVec3toVec2KernelPassing(scene.particle_positions);
+var pos_1;
 var pos_2;
-var targets = initialVec3toVec2KernelPassing(scene.particle_targets);
-var colors = initialColorsToImage(scene.particle_colors);
-var iter = 0;
-var iter_limit = 10;
-var prevtime = 0;
-var currTime = 0;
-var voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+var targets;
+var colors;
+var iter;
+var iter_limit;
+var prevtime;
+var currTime;
+var voronoi_red;
 var voronoi_weighting_green_x;
 var voronoi_weighting_green_y;
 var pixel_weightings;
@@ -79,6 +81,14 @@ makeRenderLoop(
       targets = initialVec3toVec2KernelPassing(scene.particle_targets);
       colors = initialColorsToImage(scene.particle_colors);
       voronoi_red = colorByVoronoi(pos_1, colors, targets, 0);
+
+      cameraControls.reset();//position0.Quaternion = new THREE.Quaternion(0.0, -1, 0.0);
+      camera.position.set(10, 10, 10);
+      camera.position.applyQuaternion( new THREE.Quaternion().setFromAxisAngle(
+        new THREE.Vector3( 0, 1, 0 ),
+        Math.PI
+      ));
+      cameraControls.update();
     }
 
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); console.log(prevtime - currTime); prevtime = currTime; console.log('iter:' + iter);}
