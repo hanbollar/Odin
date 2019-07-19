@@ -95,17 +95,22 @@ makeRenderLoop(
     if (DEBUG && iter < iter_limit) { currTime = Date.now(); prevtime = currTime; console.log('render update');  }
 
     // only need one color because hash function we're using has all color channels be the same value.
-    voronoi_red = colorByVoronoi(pos_1,colors, targets, 0);
-    pixel_weightings = pixelWeights(pos_1, voronoi_red, colors, targets);
-    summed_weightings = summedWeightPerAgent(pixel_weightings, pos_1, voronoi_red, colors, targets);
-    voronoi_weighting_green_x = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0);
-    voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 1);
-    summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
-    summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
+    if (params.render_mode != 7) {
+      voronoi_red = colorByVoronoi(pos_1,colors, targets, 0);
+      pixel_weightings = pixelWeights(pos_1, voronoi_red, colors, targets);
+      summed_weightings = summedWeightPerAgent(pixel_weightings, pos_1, voronoi_red, colors, targets);
+      voronoi_weighting_green_x = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0);
+      voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 1);
+      summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
+      summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
 
-    if (params.render_mode != -1) {
-      pos_2 = positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
-    } // otherwise: dont update positions
+      if (params.render_mode != -1) {
+        pos_2 = positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
+      } // otherwise: dont update positions
+    } else {
+      // do nothing here. optimized position is updated only when it is in its render mode.
+      // see params.render_mode == 7 for optimized position update.
+    }
 
     if (params.render_mode > 0) {
       if (params.render_mode == 1) {
@@ -130,10 +135,20 @@ makeRenderLoop(
         document.getElementsByTagName('body')[0].appendChild(velToScreenVisual.getCanvas());
       } else if (params.render_mode == 6) {
         // full combination
-        allColoringVisual(voronoi_red, voronoi_weighting_green_x, pos_1);
+        allColoringVisual(voronoi_red, voronoi_weighting_green_x, pos_2);
+        document.getElementsByTagName('body')[0].appendChild(allColoringVisual.getCanvas());
+      } else if (params.render_mode == 7) {
+        // optimized full combination
+        pos_2 = superKernel_positionOutput(...);
+
+        allColoringVisual(
+          colorByVoronoi(pos_1,colors, targets, 0),
+          actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0),
+          pos_2);
         document.getElementsByTagName('body')[0].appendChild(allColoringVisual.getCanvas());
       }
     }
+
     
     // send stuff to webgl2 pipeline
     // if (not on first frame... then render...)

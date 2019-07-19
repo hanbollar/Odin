@@ -159,6 +159,7 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT]);
+//.setOutputToTexture(true);
 
 export const summedWeightPerAgent = gpu.createKernel(function(pixel_weights, positions, voronoi_red, colors, targets) {
   // for each associated agent,
@@ -270,6 +271,63 @@ export const positionsUpdate = gpu.createKernel(function(old_positions, velociti
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([2, NUM_PARTICLES]);
+
+/******************************
+**** SUPERKERNEL FUNCTIONS ****
+*******************************/
+
+1 voronoi_red = colorByVoronoi(pos_1,colors, targets, 0);
+2 pixel_weightings = pixelWeights(pos_1, voronoi_red, colors, targets);
+3 summed_weightings = summedWeightPerAgent(pixel_weightings, pos_1, voronoi_red, colors, targets);
+voronoi_weighting_green_x = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0);
+voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 1);
+summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
+summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
+
+
+export const superKernel_123 = gpu.combineKernels(
+  colorByVoronoi, pixelWeights, summedWeightPerAgent, actualVoronoiWeightingPerPixel, summedWeightPerAgent,
+  function(pos_1, colors, targets)
+) {
+  const voronoi_red = colorByVoronoi(pos_1,colors, targets, 0);
+  const pixel_weightings = pixelWeights(pos_1, voronoi_red, colors, targets);
+  const summed_weightings = summedWeightPerAgent(pixel_weightings, pos_1, voronoi_red, colors, targets);
+//  ^^^ mega kernel since need all 3
+  const voronoi_weighting_green_x = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0);
+  const summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
+// ^^ super kernel 1 a
+  const voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 1);
+  const summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
+// ^^ super kernel 1 b
+
+positionsToScreenVisual(positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
+// ^^ super kernel 2 combining both kernel 1 a and kernel 1 b
+}
+
+export const superKernel_voronoiWeighting_and_summedWeighting = gpu.combineKernels(
+  summedWeightPerAgent, actualVoronoiWeightingPerPixel, summedWeightPerAgent
+  function(outputfrom_colorByVoronoi, outputfrom_pixelWeightings, targets, colors)) {
+
+  
+  const voronoi_weighting_green_x = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 0);
+  summed_directionalWeightings_x = summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets);
+}
+
+export const oneLinedSuperKernel2 = gpu.combineKernels(function(...)) {
+  
+  summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
+  const voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightings, summed_weightings, voronoi_red, colors, targets, 1);
+}
+
+
+// final super kernel puts everything together to output
+export const superKernel_positionOutput = gpu.combineKernels(summedWeightPerAgent, superKernel_voronoiWeighting_and_summedWeighting, positionsToScreenVisual
+  function(outputfrom_colorByVoronoi, outputfrom_pixel_weightings, targets, colors) {
+    
+  return positionsToScreenVisual(positionsUpdate(pos_1, summed_directionalWeightings_x, summed_directionalWeightings_y);
+})
+.setConstants({ length: NUM_PARTICLES, screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
+.setOutput([NUM_PARTICLES * 3]);
 
 /*************************
 **** OUTPUT FUNCTIONS ****

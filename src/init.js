@@ -1,4 +1,5 @@
 export const DEBUG = false && process.env.NODE_ENV === 'development';
+export const optimized_render_mode = 7;
 const THREE = require('three')
 
 import DAT from 'dat.gui';
@@ -61,6 +62,7 @@ gui.add(params, 'render_mode', { Simulation: '0',
                                  Agent_Positions: '4',
                                  Velocities_of_Agents_at_Positions: '5',
                                  Combination_Agent_ids_Velocity_and_Weights: '6',
+                                 Optimized_Render_Mode: '7'
                                 }).onChange(function(newVal) {
 
   if (newVal == 0 || newVal == -1) {
