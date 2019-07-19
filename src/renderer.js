@@ -143,32 +143,31 @@ class Renderer
   {
     this.agentPos = positions;
     this.agentFwd = forwards;
-    /*
-    this.agentPos = [];
-    this.agentFwd = [];
-    for (var i = 0; i < positions.length; i++)
-    {
-        try { throw i }
-        catch (agent)
-        {
-            agentPos.push(positions[agent].x);
-            agentPos.push(positions[agent].y);
-            agentPos.push(positions[agent].z);
-
-            agentFwd.push(forwards[agent].x);
-            agentFwd.push(forwards[agent].y);
-            agentFwd.push(forwards[agent].z);
-        }
-    }
-    */
   }
 
-  drawScene() 
+  setupGLInfo() 
   {
     ////////////////////////////////////////////////////////////////////////////
     // FOR RENDERING TO TEXTURE
     ////////////////////////////////////////////////////////////////////////////
 
+    gl.viewport(0, 0, this.texDimension, this.texDimension);
+
+    // creating buffers ahead of time
+
+    // 1) for the rendering to texture step
+    
+    this.fbo = gl.createFramebuffer();
+    // vbo
+    this.tex_vertex_buffer = gl.createBuffer();
+    
+    // 2) for the crowd simulation main scene
+    // vbo
+    this.quad_vertex_buffer = gl.createBuffer();
+  }
+
+  drawScene() 
+  {
     gl.viewport(0, 0, this.texDimension, this.texDimension);
 
     // for more info on gl framebuffer texture functions:
@@ -224,7 +223,6 @@ class Renderer
         }
     }
     gl.uniform3fv(this.tex_uniforms.agentPositions, agentPos);
-
     var agentFwd = [];
     for (var j = 0; j < this.numAgents; j++)
     {
@@ -321,7 +319,122 @@ class Renderer
 
     // after draw
     gl.bindBuffer(gl.ARRAY_BUFFER, null);
-    gl.bindVertexArray(null);        
+    gl.bindVertexArray(null);      
+
+
+
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // FOR RENDERING TO TEXTURE
+    ////////////////////////////////////////////////////////////////////////////
+
+    /*gl.viewport(0, 0, this.texDimension, this.texDimension);
+
+    var agent_tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, agent_tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, this.texDimension, this.texDimension, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, agent_tex, 0);
+
+    gl.useProgram(this.tex_shader_program);
+    
+    gl.clear( gl.DEPTH_BUFFER_BIT )
+
+    // vbo
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.tex_vertex_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.quad_vertex_buffer_data, gl.STATIC_DRAW);
+    
+    // vao
+    gl.enableVertexAttribArray(this.tex_uniforms.v_position);
+    gl.vertexAttribPointer(this.tex_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
+
+    ////////////////////////////////////////////////////////////////////////////
+    // uniforms
+    gl.uniform3fv(this.tex_uniforms.agentPositions, this.agentPos);
+    gl.uniform3fv(this.tex_uniforms.agentForwards, this.agentFwd);
+
+    gl.uniform1fv(this.tex_uniforms.agentTimeOffset, this.agentOff);
+    gl.uniform1fv(this.tex_uniforms.agentGender, this.agentGen);
+    gl.uniform1fv(this.tex_uniforms.agentNervous, this.agentNer);
+    gl.uniform1fv(this.tex_uniforms.agentWeight, this.agentWei);
+    gl.uniform1fv(this.tex_uniforms.agentHappy, this.agentHap);
+
+    gl.uniform1f(this.tex_uniforms.time, (Date.now() - this.startTime) * .001);
+    gl.uniform1i(this.tex_uniforms.texDim, this.texDimension);
+    gl.uniform1f(this.tex_uniforms.worldDim, this.worldDimension);
+    
+    ////////////////////////////////////////////////////////////////////////////
+
+    // FINALLY, draw, 6 vertices because double sided
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    // FOR CROWD SIMULATION MAIN SCENE
+    ////////////////////////////////////////////////////////////////////////////
+
+    // fixes resizing window
+    gl.viewport(0, 0, canvas.clientWidth, canvas.clientHeight);
+
+    // Now draw the main scene, which is 3D, using the texture.
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null); // Draw to default framebuffer.
+
+    // clear all values before redrawing
+    gl.clearColor(0.2, 0.0, 0.2, 1.0);  
+    gl.clearDepth(1.0);                 
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);  
+
+    // useMe()
+    gl.useProgram(this.crowd_shader_program);
+
+    // vbo
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.quad_vertex_buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, this.quad_vertex_buffer_data, gl.STATIC_DRAW);
+    
+    // vao
+    gl.enableVertexAttribArray(this.crowd_uniforms.v_position);
+    gl.vertexAttribPointer(this.crowd_uniforms.v_position, 4, gl.FLOAT, false, 0, 0);
+    
+    ////////////////////////////////////////////////////////////////////////////
+    // uniforms
+
+    // for sdf walking
+    gl.uniform2f(this.crowd_uniforms.resolution, canvas.clientWidth, canvas.clientHeight);
+    gl.uniform1f(this.crowd_uniforms.time, (Date.now() - this.startTime) * .001);
+    gl.uniform1f(this.crowd_uniforms.fov, camera.fov * Math.PI / 180);
+    gl.uniform1f(this.crowd_uniforms.raymarchMaximumDistance, this.worldDimension);
+    gl.uniform1f(this.crowd_uniforms.raymarchPrecision, 0.01);
+    gl.uniform3f(this.crowd_uniforms.camera, camera.position.x, camera.position.y, camera.position.z);
+    gl.uniform3f(this.crowd_uniforms.target, 0, 10, 0);
+
+    // NOTE gl.uniform3fv takes in ARRAY OF FLOATS, NOT ARRAY OF VEC3S
+    // [vec3(1, 2, 3), vec3(4, 5, 6)] must be converted to [1, 2, 3, 4, 5, 6]
+    //gl.uniform3fv(this.crowd_uniforms.joints, this.walker.update());
+
+    gl.uniform1i(this.crowd_uniforms.texDim, this.texDimension);
+    gl.uniform1f(this.crowd_uniforms.worldDim, this.worldDimension);
+    gl.uniform1fv(this.crowd_uniforms.agentRadius, this.agentRad);
+
+    // PASS TEXTURE OF AGENT POSITIONS FROM FRAME BUFFER    
+    // passing agent data texture to crowd shader
+    gl.uniform1i(this.crowd_uniforms.u_image, 0);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, agent_tex);
+
+    ////////////////////////////////////////////////////////////////////////////
+
+    // draw, 6 vertices because double sided
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+    // after draw
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    gl.bindVertexArray(null);  
+
+    */      
   }
 }
 
