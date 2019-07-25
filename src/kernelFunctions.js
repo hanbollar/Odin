@@ -159,7 +159,6 @@ export const colorByVoronoi = gpu.createKernel(function(positions_texture, color
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, flt_max: FLT_MAX, agent_vis_rad: AGENT_VIS_RADIUS, pixel_rad: PIXEL_BUFFER_RAD})
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT]);
-//.setOutputToTexture(true);
 
 export const summedWeightPerAgent = gpu.createKernel(function(pixel_weights, positions, voronoi_red, colors, targets) {
   // for each associated agent,
@@ -209,11 +208,11 @@ export const pixelWeights = gpu.createKernel(function(positions, voronoi_red, co
 
   return computeMarkerWeight(
                   positions[agent_index][0] * this.constants.screen_x,
-  							  positions[agent_index][1] * this.constants.screen_y,
-		  					  x_i,
-		  					  y_i,
-		  					  targets[agent_index][0] * this.constants.screen_x,
-		  					  targets[agent_index][1] * this.constants.screen_y);
+                  positions[agent_index][1] * this.constants.screen_y,
+                  x_i,
+                  y_i,
+                  targets[agent_index][0] * this.constants.screen_x,
+                  targets[agent_index][1] * this.constants.screen_y);
 })
 .setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT]);
@@ -288,7 +287,7 @@ voronoi_weighting_green_y = actualVoronoiWeightingPerPixel(pos_1, pixel_weightin
 summed_directionalWeightings_y = summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets);
 */
 
-export const superKernel_12345 = gpu.combineKernels(
+/*export const superKernel_12345 = gpu.combineKernels(
   colorByVoronoi, pixelWeights, summedWeightPerAgent, actualVoronoiWeightingPerPixel, summedWeightPerAgent, positionsUpdate,
   function(pos_1, colors, targets) {
 
@@ -302,7 +301,8 @@ export const superKernel_12345 = gpu.combineKernels(
   return positionsUpdate( pos_1,
                           summedWeightPerAgent(voronoi_weighting_green_x, pos_1, voronoi_red, colors, targets),
                           summedWeightPerAgent(voronoi_weighting_green_y, pos_1, voronoi_red, colors, targets));
-})
+
+})*///----- removed for now because currently causing a stall in the program
 //.setConstants({ length: NUM_PARTICLES, screen_x : FLOOR_WIDTH, screen_y: FLOOR_HEIGHT })
 //.setOutput([2, NUM_PARTICLES]);
 
@@ -353,12 +353,12 @@ export const velocitiesToViableArray = gpu.createKernel(function(positions_2elem
 export const positionsToScreenVisual = gpu.createKernel(function(pos) {
   const x_i = this.thread.y;
   const y_i = this.thread.x;
-	for (var i = 0; i < this.constants.length; ++i) {
-		if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
-		  && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
-			this.color(pos[i][0], 0, pos[i][1]);
-		}
-	}
+  for (var i = 0; i < this.constants.length; ++i) {
+    if (abs(pos[i][0] * this.constants.screen_x - x_i) < this.constants.draw_rad
+      && abs(pos[i][1] * this.constants.screen_y - y_i) < this.constants.draw_rad) {
+      this.color(pos[i][0], 0, pos[i][1]);
+    }
+  }
 })
 .setConstants({ length: NUM_PARTICLES, screen_x: FLOOR_WIDTH, screen_y: FLOOR_HEIGHT, draw_rad: AGENT_DRAW_RAD })
 .setOutput([FLOOR_WIDTH, FLOOR_HEIGHT])
@@ -385,11 +385,11 @@ export const velToScreenVisual = gpu.createKernel(function(pos, vel_x, vel_y) {
 
 
 export const allColoringVisual = gpu.createKernel(function(voronoi_red, voronoi_green, pos) {
-	const x_i = this.thread.y;
+  const x_i = this.thread.y;
   const y_i = this.thread.x;
 
   var red = voronoi_red[x_i][y_i];
-	var green = voronoi_green[x_i][y_i];
+  var green = voronoi_green[x_i][y_i];
   var blue = 0;
 
   for (var i = 0; i < this.constants.length; ++i) {
@@ -406,7 +406,7 @@ export const allColoringVisual = gpu.createKernel(function(voronoi_red, voronoi_
 .setGraphical(true);
 
 export const velocityAtPositionsVisual = gpu.createKernel(function(velocities, pos) {
-	var red = 0;
+  var red = 0;
   var green = 0;
   var blue = 0;
 

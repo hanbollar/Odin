@@ -90,7 +90,6 @@ document.body.appendChild(stats.domElement);
 
 // Initialize camera
 export const camera = new PerspectiveCamera(120, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
-console.log(camera.getWorldDirection());
 camera.position.applyQuaternion( new THREE.Quaternion().setFromAxisAngle(
         new THREE.Vector3( 0, 1, 0 ), // The positive y-axis
         Math.PI
