@@ -153,11 +153,15 @@ makeRenderLoop(
     }
 
     
-    // send stuff to webgl2 pipeline
-    // if (not on first frame... then render...)
-    // render...(outputToRender_pos1, outputToRender_pos2);
-    render.updateAgents(positionsToViableArray(pos_2), velocitiesToViableArray(pos_2, pos_1));
-    render.update();
+    // send stuff to webgl2 pipeline if in render mode Simulation: '0' or Just_Marionette_Movement: '-1'
+    if (params.render_mode == 0 || params.render_mode == -1) {
+      // if (not on first frame... then render...)
+      // render...(outputToRender_pos1, outputToRender_pos2);
+      
+      render.updateAgents(positionsToViableArray(pos_2), velocitiesToViableArray(pos_2, pos_1));
+      render.update();
+    }
+    console.log(params.render_mode);
 
     // now pos_2 is the starting buffer - dont want to copy over... just switch out target reference variable.
     // swap buffers. (pos_2 will be overwritten on output so dont need to change it).
